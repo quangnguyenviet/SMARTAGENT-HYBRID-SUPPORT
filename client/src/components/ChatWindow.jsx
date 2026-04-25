@@ -155,6 +155,8 @@ export default function ChatWindow() {
             <div className="space-y-4">
               {messages.map((msg) => {
                 const isUser = String(msg.senderType || '').toLowerCase() === 'user';
+                const isAgent = String(msg.senderType || '').toLowerCase() === 'agent';
+                const isBot = String(msg.senderType || '').toLowerCase() === 'bot';
 
                 return (
                   <div
@@ -162,14 +164,18 @@ export default function ChatWindow() {
                     className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`w-full max-w-[85%] rounded-3xl border px-4 py-3 sm:max-w-[75%] ${
+                      className={`w-full max-w-[85%] rounded-3xl border px-4 py-3 sm:max-w-[75%] shadow-lg ${
                         isUser
-                          ? 'border-cyan-300/40 bg-cyan-500 text-slate-950'
-                          : 'border-white/10 bg-white/10 text-slate-100'
+                          ? 'border-cyan-300/40 bg-cyan-500 text-slate-950 rounded-tr-none'
+                          : isAgent
+                            ? 'border-indigo-500/50 bg-indigo-600 text-white rounded-tl-none shadow-indigo-500/20'
+                            : 'border-white/10 bg-white/10 text-slate-100 rounded-tl-none'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-4 text-xs opacity-80">
-                        <span className="font-semibold uppercase tracking-wide">{msg.sender || 'System'}</span>
+                      <div className="flex items-center justify-between gap-4 text-[10px] uppercase tracking-wider opacity-80">
+                        <span className={`font-bold ${isAgent ? 'text-indigo-200' : isBot ? 'text-cyan-300' : ''}`}>
+                          {isAgent ? '👩‍💼 Nhân viên hỗ trợ' : isBot ? '🤖 AI Assistant' : msg.sender || 'Customer'}
+                        </span>
                         <span>{msg.timestamp}</span>
                       </div>
                       <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{msg.content}</p>

@@ -85,23 +85,11 @@ export default function AdminDashboard() {
 
   // STOMP WebSocket for realtime updates
   useEffect(() => {
-    const client = new Client({
-      brokerURL: 'ws://localhost:8080/ws',
-      reconnectDelay: 5000,
-      onConnect: () => {
-        console.log('Admin STOMP connected');
-        client.subscribe('/topic/admin/conversations', (message) => {
-          if (message.body) {
-            const event = JSON.parse(message.body);
-            handleAdminEvent(event);
-          }
-        });
-      },
-      onStompError: (frame) => console.error('Admin STOMP error', frame)
-    });
+    chatService.connectAdminWebSocket((event) => {
+      handleAdminEvent(event);
+    }).catch(err => console.error('Admin STOMP error', err));
 
-    client.activate();
-    return () => client.deactivate();
+    return () => chatService.disconnect();
   }, []);
 
   function handleAdminEvent(event) {

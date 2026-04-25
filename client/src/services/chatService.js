@@ -87,11 +87,36 @@ class ChatService {
     }
   }
 
-  // STOMP WebSocket - Connect and listen
+  // STOMP WebSocket - Connect for Customer
   connectWebSocket(conversationId) {
+    return this._connect(() => {
+      // Subscribe to the specific room
+      this.subscription = this.client.subscribe(`/topic/chat/${conversationId}`, (message) => {
+        if (message.body) {
+          const parsedMessage = JSON.parse(message.body);
+          parsedMessage.eventType = 'new_message';
+          this.notifyListeners(parsedMessage);
+        }
+      });
+    });
+  }
+
+  // STOMP WebSocket - Connect for Admin
+  connectAdminWebSocket(onAdminEvent) {
+    return this._connect(() => {
+      // Subscribe to global admin topic
+      this.subscription = this.client.subscribe('/topic/admin/conversations', (message) => {
+        if (message.body) {
+          const event = JSON.parse(message.body);
+          onAdminEvent(event);
+        }
+      });
+    });
+  }
+
+  // Internal common connect logic
+  _connect(onConnectCallback) {
     return new Promise((resolve, reject) => {
-      this.conversationId = conversationId;
-      
       this.client = new Client({
         brokerURL: WS_BROKER_URL,
         reconnectDelay: 5000,
@@ -99,29 +124,14 @@ class ChatService {
         heartbeatOutgoing: 4000,
         onConnect: () => {
           console.log('STOMP connected');
-          
-          // Emit internal event for UI to know it's connected
           this.notifyListeners({ eventType: 'connection_established' });
-          
-          // Subscribe to the specific room
-          this.subscription = this.client.subscribe(`/topic/chat/${conversationId}`, (message) => {
-            if (message.body) {
-              const parsedMessage = JSON.parse(message.body);
-              // Backend MessageDTO -> Add eventType so ChatWindow handles it
-              parsedMessage.eventType = 'new_message';
-              this.notifyListeners(parsedMessage);
-            }
-          });
+          if (onConnectCallback) onConnectCallback();
           resolve();
         },
         onStompError: (frame) => {
           console.error('Broker reported error: ' + frame.headers['message']);
-          console.error('Additional details: ' + frame.body);
           reject(new Error(frame.headers['message']));
         },
-        onWebSocketClose: () => {
-          console.log('STOMP connection closed');
-        }
       });
 
       this.client.activate();
@@ -131,10 +141,11 @@ class ChatService {
   // STOMP WebSocket - Send message
   sendWebSocketMessage(conversationId, sender, senderType, content) {
     if (this.client && this.client.connected) {
+      const eventType = senderType === 'agent' ? 'AGENT_MESSAGE' : 'USER_MESSAGE';
       this.client.publish({
         destination: '/app/chat.sendMessage',
         body: JSON.stringify({
-          eventType: 'USER_MESSAGE',
+          eventType,
           conversationId,
           sender,
           senderType,

@@ -49,6 +49,26 @@ public class ChatController {
                     .body(ApiResponse.error("Failed to create conversation: " + e.getMessage()));
         }
     }
+
+    /**
+     * Get all conversations for admin dashboard
+     * GET /api/conversations
+     */
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<ConversationDTO>>> getAllConversations() {
+
+        log.info("Fetching all conversations for admin dashboard");
+
+        try {
+            List<ConversationDTO> conversations = chatService.getAllConversations();
+            return ResponseEntity.ok(ApiResponse.ok(conversations,
+                    "Found " + conversations.size() + " conversations"));
+        } catch (Exception e) {
+            log.error("Error fetching all conversations", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch conversations: " + e.getMessage()));
+        }
+    }
     
     /**
      * Get conversation by ID

@@ -42,6 +42,18 @@ class ChatService {
     }
   }
 
+  // REST API - Get all conversations for admin dashboard
+  async getAllConversations() {
+    try {
+      const res = await fetch(`${API_BASE}/conversations`);
+      const data = await res.json();
+      return data.success ? data.data : [];
+    } catch (error) {
+      console.error('Get all conversations failed:', error);
+      return [];
+    }
+  }
+
   // REST API - Send message via HTTP (optional, WebSocket is primary)
   async sendMessage(conversationId, sender, senderType, content) {
     try {

@@ -109,91 +109,102 @@ export default function ChatWindow() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="mb-4 text-2xl font-bold text-purple-600">SmartAgent</div>
-          <div className="text-gray-600">Connecting to chat server...</div>
+      <div className="mx-auto flex min-h-[calc(100vh-73px)] max-w-5xl items-center justify-center px-4 py-6">
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900/80 p-8 text-center shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+          <div className="mx-auto mb-4 h-10 w-10 animate-pulse rounded-full bg-cyan-400/40" />
+          <div className="text-2xl font-semibold tracking-tight text-white">Connecting...</div>
+          <div className="mt-2 text-sm text-slate-400">Initializing your customer session</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 shadow-lg">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold">SmartAgent Chat</h1>
-          <div className="text-sm mt-1 flex items-center gap-2">
-            <span className={`inline-block w-2 h-2 rounded-full ${connected ? 'bg-green-300' : 'bg-red-300'}`}></span>
-            {connected ? 'Connected' : 'Disconnected'} | Conversation #{conversationId}
+    <div className="mx-auto flex min-h-[calc(100vh-73px)] w-full max-w-5xl flex-col gap-4 px-4 py-4 lg:px-6">
+      <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-4 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.26em] text-cyan-300/80">Customer View</p>
+            <h2 className="mt-1 text-xl font-semibold text-white">Live Conversation</h2>
+            <p className="mt-1 text-sm text-slate-400">Conversation #{conversationId} • Customer #{customerId}</p>
+          </div>
+          <div className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${connected ? 'bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/30' : 'bg-rose-400/15 text-rose-300 ring-1 ring-rose-400/30'}`}>
+            <span className={`inline-block h-2 w-2 rounded-full ${connected ? 'bg-emerald-300' : 'bg-rose-300'}`} />
+            {connected ? 'Connected' : 'Disconnected'}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 max-w-4xl mx-auto w-full">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            <div className="text-center">
-              <div className="text-4xl mb-4">💬</div>
-              <p>No messages yet. Start the conversation!</p>
+      <section className="flex min-h-[420px] flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+        <div className="border-b border-white/10 px-5 py-3">
+          <div className="text-sm font-medium text-slate-200">Message History</div>
+          <div className="text-xs text-slate-400">Latest messages appear automatically</div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-5">
+          {messages.length === 0 ? (
+            <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] text-slate-400">
+              Start by sending your first message.
             </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.senderType === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-md px-4 py-2 rounded-lg ${
-                    msg.senderType === 'user'
-                      ? 'bg-purple-600 text-white rounded-br-none'
-                      : 'bg-gray-200 text-gray-900 rounded-bl-none'
-                  }`}
-                >
-                  <div className="text-sm font-semibold">{msg.sender}</div>
-                  <div className="mt-1 text-sm">{msg.content}</div>
-                  <div className={`text-xs mt-1 ${msg.senderType === 'user' ? 'text-purple-200' : 'text-gray-500'}`}>
-                    {msg.timestamp}
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((msg) => {
+                const isUser = String(msg.senderType || '').toLowerCase() === 'user';
 
-      {/* Input Form */}
-      <div className="bg-white border-t border-gray-200 p-4 shadow-lg">
-        <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder={connected ? 'Type a message...' : 'Waiting for connection...'}
-              disabled={!connected}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            />
-            <button
-              type="submit"
-              disabled={!connected || !inputValue.trim()}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              Send
-            </button>
-          </div>
-          {!connected && (
-            <div className="text-sm text-red-600 mt-2">
-              ⚠️ Not connected to server. Make sure Spring Backend is running on port 8080
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`w-full max-w-[85%] rounded-3xl border px-4 py-3 sm:max-w-[75%] ${
+                        isUser
+                          ? 'border-cyan-300/40 bg-cyan-500 text-slate-950'
+                          : 'border-white/10 bg-white/10 text-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-4 text-xs opacity-80">
+                        <span className="font-semibold uppercase tracking-wide">{msg.sender || 'System'}</span>
+                        <span>{msg.timestamp}</span>
+                      </div>
+                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{msg.content}</p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
             </div>
           )}
-        </form>
-      </div>
+        </div>
+
+        <div className="border-t border-white/10 bg-slate-900/70 px-4 py-4 sm:px-5">
+          <form onSubmit={handleSendMessage} className="space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder={connected ? 'Type your message here...' : 'Waiting for connection...'}
+                disabled={!connected}
+                className="flex-1 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-400 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={!connected || !inputValue.trim()}
+                className="rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
+              >
+                Send
+              </button>
+            </div>
+
+            {!connected && (
+              <div className="text-xs text-rose-300">
+                Connection lost. Ensure backend is running on port 8080.
+              </div>
+            )}
+          </form>
+        </div>
+      </section>
     </div>
   );
 }

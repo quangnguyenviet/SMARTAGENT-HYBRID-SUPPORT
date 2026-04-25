@@ -30,6 +30,12 @@ public interface ChatService {
      * @return ConversationDTO if exists
      */
     Optional<ConversationDTO> getConversation(Long conversationId);
+
+    /**
+     * Get all conversations for admin dashboard
+     * @return List of ConversationDTOs ordered by most recent activity
+     */
+    List<ConversationDTO> getAllConversations();
     
     /**
      * Get all conversations for a customer

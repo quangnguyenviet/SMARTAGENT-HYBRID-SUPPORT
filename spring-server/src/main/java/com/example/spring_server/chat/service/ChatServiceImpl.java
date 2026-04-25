@@ -9,6 +9,7 @@ import com.example.spring_server.chat.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,6 +45,14 @@ public class ChatServiceImpl implements ChatService {
     public Optional<ConversationDTO> getConversation(Long conversationId) {
         return conversationRepository.findById(conversationId)
                 .map(this::entityToDTO);
+    }
+
+    @Override
+    public List<ConversationDTO> getAllConversations() {
+        return conversationRepository.findAll(Sort.by(Sort.Direction.DESC, "updatedAt"))
+                .stream()
+                .map(this::entityToDTO)
+                .collect(Collectors.toList());
     }
     
     @Override

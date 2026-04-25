@@ -175,20 +175,34 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleTakeOver = () => {
-    // Tạm thời mock logic Take Over
+  const handleTakeOver = async () => {
+    if (!selectedConversation) return;
+    
     console.log("Taking over conversation:", selectedConversation.id);
-    alert("Tính năng Take Over sẽ gọi API backend để đổi trạng thái sang HANDED_OVER và khóa Bot.");
+    const success = await chatService.takeOver(selectedConversation.id, 1); // Mock agentId = 1
+    
+    if (success) {
+      console.log("Take over successful");
+    } else {
+      alert("Giành quyền thất bại, vui lòng thử lại.");
+    }
   };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation) return;
 
-    // Send via API (ChatController needs an endpoint, or we can send via WS if we add logic)
-    // Tạm thời mock hiển thị text
     console.log("Admin sending message:", newMessage);
-    alert("Sẽ tích hợp gửi tin nhắn Admin ở các bước sau.");
+    
+    // Gửi tin nhắn admin qua WebSocket
+    // Chúng ta giả định agentId = 1 (Nhân viên)
+    chatService.sendWebSocketMessage(
+      selectedConversation.id,
+      "Nhân viên hỗ trợ",
+      "agent",
+      newMessage
+    );
+
     setNewMessage('');
   };
 

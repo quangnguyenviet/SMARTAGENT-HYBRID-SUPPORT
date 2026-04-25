@@ -75,9 +75,12 @@ public interface ChatService {
     void updateConversationStatus(Long conversationId, String status);
     
     /**
-     * Close a conversation
+     * Agent takes over the conversation from the Bot
      * @param conversationId - ID of the conversation
+     * @param agentId - ID of the agent who takes over
      */
+    void takeOver(Long conversationId, Long agentId);
+    
     void closeConversation(Long conversationId);
     
     /**

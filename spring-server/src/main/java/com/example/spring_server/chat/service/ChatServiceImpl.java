@@ -153,6 +153,39 @@ public class ChatServiceImpl implements ChatService {
     public void closeConversation(Long conversationId) {
         updateConversationStatus(conversationId, "CLOSED");
     }
+
+    @Override
+    public void takeOver(Long conversationId, Long agentId) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation not found: " + conversationId));
+
+        conversation.setIsBotActive(false);
+        conversation.setStatus("HANDED_OVER");
+        conversation.setAssignedAgentId(agentId);
+        conversation.setUpdatedAt(LocalDateTime.now());
+        conversationRepository.save(conversation);
+
+        ConversationDTO updatedDto = entityToDTO(conversation);
+
+        // Broadcast to admin dashboard
+        messagingTemplate.convertAndSend("/topic/admin/conversations",
+                AdminDashboardEvent.builder()
+                        .eventType(AdminDashboardEvent.EventType.CONVERSATION_UPDATED)
+                        .conversation(updatedDto)
+                        .build());
+
+        // Send a system message to the customer notifying them an agent has joined
+        MessageDTO systemMsg = MessageDTO.builder()
+                .conversationId(conversationId)
+                .sender("Hệ thống")
+                .senderType("bot") // Show as bot or system
+                .content("Nhân viên hỗ trợ đã tham gia hội thoại.")
+                .timestamp(LocalDateTime.now())
+                .build();
+        
+        // We could also save this message to DB if we want it in history
+        sendMessage(conversationId, systemMsg);
+    }
     
     @Override
     public void deleteConversation(Long conversationId) {

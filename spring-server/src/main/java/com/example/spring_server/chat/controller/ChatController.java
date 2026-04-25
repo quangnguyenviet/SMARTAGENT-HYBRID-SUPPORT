@@ -269,4 +269,28 @@ public class ChatController {
                     .body(ApiResponse.error("Failed to delete conversation: " + e.getMessage()));
         }
     }
+    /**
+     * Agent takes over the conversation from the Bot
+     * POST /api/conversations/{id}/takeover
+     */
+    @PostMapping("/{id}/takeover")
+    public ResponseEntity<ApiResponse<Void>> takeOver(
+            @PathVariable Long id,
+            @RequestBody TakeOverRequest request) {
+        
+        log.info("Agent taking over conversation: id={}, agentId={}", id, request.getAgentId());
+        
+        try {
+            chatService.takeOver(id, request.getAgentId());
+            return ResponseEntity.ok(ApiResponse.ok(null, "Take over successful"));
+        } catch (IllegalArgumentException e) {
+            log.error("Conversation not found: {}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("Conversation not found"));
+        } catch (Exception e) {
+            log.error("Error in take over", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to take over: " + e.getMessage()));
+        }
+    }
 }

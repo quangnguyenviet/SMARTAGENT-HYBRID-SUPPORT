@@ -15,12 +15,16 @@ Dự án **SmartAgent Hybrid Support** đã chuyển từ giai đoạn định h
   - API admin lấy danh sách hội thoại (`GET /api/conversations`).
 - **✅ Frontend chat/admin** (đã implement):
   - `ChatWindow` cho khách hàng.
-  - `AdminDashboard` xem danh sách hội thoại và lịch sử chat.
+  - `AdminDashboard` xem danh sách hội thoại và lịch sử chat (Đã nâng cấp lên giao diện 3 cột chuẩn Sales-Centric).
   - Điều hướng bằng `react-router-dom` (`/admin`, `/chat`).
 - **✅ Push realtime cho admin dashboard & Customer Chat** (đã implement):
   - Thay thế toàn bộ Raw WebSocket bằng kiến trúc STOMP Message Broker.
   - Tích hợp `@stomp/stompjs` trên cả `ChatWindow` (khách) và `AdminDashboard` (quản trị).
   - Loại bỏ hoàn toàn cơ chế polling, chuyển sang pub/sub realtime (cập nhật list hội thoại, nảy tin nhắn ngay lập tức không cần reload).
+- **✅ Orchestrator Module (MVP)**:
+  - Triển khai `OrchestratorService` và mock `AiScoringClient`.
+  - Tự động bắt tin nhắn, chấm điểm (Lead Score), xác định Intent.
+  - Tự động thay đổi trạng thái Bot/Handover dựa trên rule.
 
 ## Các Quyết Định Mới Nhất
 - Giữ kiến trúc Hybrid (AI + Human), nhưng ưu tiên hoàn thiện luồng chat người-thật trước khi tích hợp bot.

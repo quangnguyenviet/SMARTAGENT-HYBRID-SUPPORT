@@ -71,6 +71,22 @@ class ChatService {
     }
   }
 
+  // REST API - Take over conversation
+  async takeOver(conversationId, agentId) {
+    try {
+      const res = await fetch(`${API_BASE}/conversations/${conversationId}/takeover`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId }),
+      });
+      const data = await res.json();
+      return data.success;
+    } catch (error) {
+      console.error('Take over failed:', error);
+      return false;
+    }
+  }
+
   // STOMP WebSocket - Connect and listen
   connectWebSocket(conversationId) {
     return new Promise((resolve, reject) => {

@@ -1,17 +1,21 @@
 # Mẫu Hệ Thống & Kiến Trúc (System Patterns)
 
-## Kiến Trúc Hệ Thống (Dự Kiến)
-Hệ thống SmartAgent được thiết kế theo hướng Microservices hoặc Modular Monolith để dễ dàng mở rộng và tích hợp đa kênh. Các Component chính bao gồm:
+## Kiến Trúc Hệ Thống
+Hệ thống SmartAgent được thiết kế theo hướng **Modular Monolith** kết hợp với **External AI Service** để đơn giản hóa giai đoạn đầu nhưng vẫn đảm bảo tính tách biệt. Các Component chính bao gồm:
 
-### 1. Smart Screening & Intent Engine
-- **Nhiệm vụ**: Tiếp nhận tin nhắn, xử lý ngôn ngữ tự nhiên (NLP) để phân tích ý định (Intent) và trích xuất thông tin (Entity Extraction).
-- **Cơ chế**: Sử dụng một luồng phân tích thời gian thực (Real-time Pipeline) trên mỗi đoạn hội thoại để liên tục cập nhật điểm số (Lead Score) và trạng thái cảm xúc.
+### 1. Spring Boot Monolith (Core Backend)
+Ứng dụng Spring Boot duy nhất sẽ đóng vai trò trung tâm xử lý, được chia thành các module nội bộ:
+- **Chat Module**: Đảm nhận việc giữ kết nối WebSocket (Stomp.js/SockJS) với client (khách hàng và nhân viên), lưu trữ dữ liệu vào PostgreSQL.
+- **Orchestrator Module**: Đóng vai trò điều phối trung tâm. Nhận tin nhắn từ Chat Module và gọi sang external AI Service qua REST API (OpenFeign/RestTemplate) để xử lý NLP.
+- **Security Module**: Quản lý xác thực và phân quyền bằng JWT + Spring Security.
 
-### 2. AI-Driven Handover Module
+### 2. AI/NLP Service (FastAPI - Python)
+- **Nhiệm vụ**: Tiếp nhận tin nhắn từ Orchestrator, xử lý ngôn ngữ tự nhiên để phân tích ý định (Intent), chấm điểm (Lead Score) và trích xuất thực thể.
+- **Cơ chế**: Sử dụng Prompt Engineering với LLM (Gemini 1.5/OpenAI) hoặc mô hình NLP cục bộ (PhởBERT) để trả về JSON (Score, Intent).
+
+### 3. AI-Driven Handover & Session State (Redis)
 - **Nhiệm vụ**: Quản lý việc chuyển giao quyền kiểm soát hội thoại giữa Bot và Human.
-- **Quy tắc (Rules-Engine)**:
-  - Bật "Cờ ưu tiên" (Priority Flag) khi: Intent = Mua sỉ / Hỏi chiết khấu / Hỏi giá.
-  - Bật "Cờ cảnh báo" (Alert Flag) khi: Sentiment = Negative / Angry.
+- **Quy tắc**: Dựa trên kết quả từ AI Service, cập nhật trạng thái session trong **Redis** (ví dụ: `is_bot_active: false`, bật cờ ưu tiên). Redis giúp đồng bộ trạng thái cực nhanh giữa các node.
 
 ### 3. Cổng Tương Tác Kép (Dual Interface Gateway)
 - Xử lý việc routing tin nhắn từ khách hàng đến Chatbot hoặc Nhân viên và ngược lại mà khách hàng không nhận ra sự ngắt quãng.

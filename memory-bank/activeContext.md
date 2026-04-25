@@ -11,9 +11,13 @@ Dự án **SmartAgent Hybrid Support** hiện đang ở giai đoạn khởi tạ
 ## Các Quyết Định Mới Nhất
 - Lựa chọn mô hình Hybrid (AI + Human) với cơ chế Handover dựa trên Intent/Sentiment Analysis làm nòng cốt.
 - Thiết kế hệ thống nhắm mục tiêu "Sales-Centric" thay vì chỉ là công cụ Support đơn thuần.
+- **Chốt Tech Stack cốt lõi**:
+  - Frontend: React.js + Tailwind CSS.
+  - Backend: Spring Boot **Modular Monolith** (Gom chung luồng Chat, Orchestrator, Security vào một app).
+  - AI Service: Python FastAPI (Gọi LLM API hoặc dùng PhởBERT, chạy độc lập).
+  - Database: PostgreSQL & Redis (cho Session State để Handover không độ trễ).
 
 ## Bước Tiếp Theo
-1. Xác định Tech Stack cụ thể cho hệ thống (Backend, Frontend, AI/NLP engine, Message Broker, Real-time communication).
-2. Vẽ các sơ đồ kiến trúc (Architecture Diagram) và luồng dữ liệu (Data Flow Diagram).
-3. Thiết kế Mockup/Wireframe cho Sales-Centric Dashboard.
-4. Xây dựng Proof of Concept (PoC) cho luồng Lead Scoring và AI Handover.
+1. Vẽ các sơ đồ kiến trúc (Architecture Diagram) và luồng dữ liệu (Data Flow Diagram) chi tiết cho kiến trúc Modular Monolith này.
+2. Thiết kế Mockup/Wireframe cho Sales-Centric Dashboard.
+3. Xây dựng Proof of Concept (PoC) cho luồng Lead Scoring và AI Handover.

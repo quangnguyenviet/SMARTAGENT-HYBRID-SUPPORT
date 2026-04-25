@@ -1,29 +1,35 @@
 # Ngữ Cảnh Kỹ Thuật (Tech Context)
 
 ## Trạng Thái Công Nghệ Hiện Tại
-Dự án đang trong giai đoạn khởi tạo ý tưởng. Các công nghệ dưới đây là **đề xuất (proposed)** và sẽ được cập nhật khi dự án đi vào triển khai thực tế.
+Dự án đã chốt danh sách công nghệ (Tech Stack) cốt lõi. Tạm thời phần Backend (Spring Boot) sẽ được thiết kế theo hướng **Modular Monolith** để đẩy nhanh tốc độ phát triển trong giai đoạn đầu.
 
-## Ngăn Xếp Công Nghệ (Proposed Tech Stack)
+## Ngăn Xếp Công Nghệ (Tech Stack)
 
-### 1. Frontend (Sales-Centric Dashboard)
-- **Framework**: React.js hoặc Vue.js / Next.js (Nếu cần tối ưu SEO cho trang web).
-- **Styling**: TailwindCSS hoặc UI Component Framework (MUI, Ant Design).
-- **Real-time**: Socket.IO-client hoặc native WebSockets cho các tính năng realtime chat và notifications.
+### 1. Frontend (Giao diện Quản trị & Chat)
+- **Framework**: React.js
+- **Thư viện UI**: Tailwind CSS (giúp layout Dashboard nhanh, hiện đại) kết hợp với Lucide React cho hệ thống icon.
+- **State Management**: React Context API hoặc Redux Toolkit (quản lý danh sách hội thoại realtime).
+- **Real-time**: Stomp.js & SockJS (kết nối WebSocket với Spring Boot).
+- **Data Visualization**: Recharts (vẽ biểu đồ tỉ lệ chốt đơn, điểm tiềm năng cho Dashboard).
 
-### 2. Backend (Core Services)
-- **Ngôn ngữ/Framework**: Node.js (NestJS / Express) hoặc Python (FastAPI/Django) - Python rất mạnh để dễ dàng tích hợp các mô hình AI/NLP, Node.js mạnh về I/O realtime. Có thể kết hợp cả hai theo kiến trúc Microservices.
-- **Real-time Communication**: Socket.IO hoặc SignalR / WebSocket server.
-- **Message Broker**: RabbitMQ hoặc Kafka (Dùng để xử lý hàng đợi tin nhắn và kiến trúc Event-driven cho Handover).
+### 2. Backend (Spring Boot - Linh hồn điều phối)
+- Thiết kế theo hướng **Modular Monolith** (Tạm thời gom các luồng xử lý vào một ứng dụng Spring Boot duy nhất nhưng chia package rõ ràng để sau này dễ tách thành Microservices).
+- **Core Modules**: 
+  - *Chat Module*: Xử lý kết nối WebSocket, lưu trữ lịch sử hội thoại vào PostgreSQL.
+  - *Orchestrator Module*: Điều phối tin nhắn. Khi có tin nhắn mới, đẩy sang AI Service (bên ngoài) để "chấm điểm".
+  - *Security Module*: Spring Security & JWT (phân quyền giữa Agent/Nhân viên và Admin/Quản lý).
 
-### 3. AI & NLP Engine
-- **LLM/NLP**: OpenAI API (GPT-4) hoặc các mô hình mã nguồn mở (Llama 3, Mistral) thông qua LangChain / LlamaIndex.
-- **Sentiment & Intent Analysis**: Có thể fine-tune mô hình nhỏ để chạy nhanh (latency thấp) hoặc dùng zero-shot classification qua LLM.
+### 3. AI/NLP Service (Python - FastAPI)
+- Thay vì dùng Java cho NLP, hệ thống sử dụng FastAPI (Python) để tận dụng hệ sinh thái AI phong phú.
+- **Mô hình NLP**:
+  - *Option 1 (Nhanh & Mạnh)*: Gọi API của Gemini 1.5 Flash hoặc OpenAI. Viết Prompt tối ưu để trả về định dạng JSON (VD: `Intent: Potential, Score: 90`).
+  - *Option 2 (Tự chủ)*: Sử dụng thư viện PhởBERT hoặc VinAI/underthesea để phân tích cảm xúc và trích xuất từ khóa tiềm năng cục bộ (tiếng Việt).
+- **Communication**: Giao tiếp với Spring Boot qua REST API (sử dụng RestTemplate hoặc OpenFeign bên phía Spring).
 
-### 4. Cơ Sở Dữ Liệu (Database)
-- **Primary Database**: PostgreSQL / MySQL (Lưu trữ user, agent, cấu hình).
-- **NoSQL / Chat History**: MongoDB (Lưu trữ cấu trúc tin nhắn linh hoạt) hoặc ElasticSearch (Được dùng để tìm kiếm ngữ cảnh hội thoại nhanh chóng).
-- **Cache**: Redis (Lưu trữ phiên session, trạng thái hiện tại của hội thoại đang là Bot hay Human giữ).
+### 4. Database & Storage
+- **PostgreSQL**: Lưu trữ dữ liệu có cấu trúc (Thông tin khách hàng, Danh sách Lead, Lịch sử chat).
+- **Redis**: Lưu trữ "Trạng thái hội thoại" (Session state). Ví dụ: `conversation_123 -> {is_bot_active: true, current_score: 45}`. Giúp quá trình chuyển giao (Handover) diễn ra với độ trễ gần như bằng 0.
 
 ## Yêu Cầu Kỹ Thuật Quan Trọng
-- **Độ trễ thấp (Low Latency)**: Việc chuyển giao Handover cần diễn ra ở mức millisecond. Phản hồi của AI Sales Assist giới hạn trong 1-3 giây.
-- **Tính sẵn sàng cao (High Availability)**: Hệ thống phải hoạt động 24/7 để không mất khách hàng.
+- **Độ trễ thấp (Low Latency)**: Cực kỳ quan trọng ở khâu Handover. Sự kết hợp của Redis và WebSocket giúp đảm bảo điều này.
+- **Tính tách biệt (Decoupling)**: AI Service và Chat Service hoạt động độc lập qua Orchestrator.

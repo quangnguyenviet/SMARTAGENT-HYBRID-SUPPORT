@@ -15,8 +15,8 @@
   - `activeContext.md`
 
 ## Những Việc Đang Thực Hiện (Current Status)
-- [ ] Chờ phê duyệt và chốt danh sách Tech Stack công nghệ.
-- [ ] Chờ thiết kế Sơ đồ hệ thống (Architecture Diagram, Sequence Diagram).
+- [x] Phê duyệt và chốt danh sách Tech Stack công nghệ (React, Spring Boot Monolith, FastAPI, Postgres, Redis).
+- [ ] Thiết kế Sơ đồ hệ thống (Architecture Diagram, Sequence Diagram) dựa trên Modular Monolith.
 
 ## Những Việc Cần Làm Tiếp Theo (What's Left to Build)
 - **Thiết Kế**:

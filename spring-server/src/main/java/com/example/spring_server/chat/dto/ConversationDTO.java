@@ -22,6 +22,8 @@ public class ConversationDTO {
     private Long customerId;
     private String channel;
     private String status;
+    private Boolean isBotActive;
+    private Integer leadScore;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastMessageTime;

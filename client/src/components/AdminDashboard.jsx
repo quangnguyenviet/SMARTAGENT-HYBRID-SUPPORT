@@ -11,8 +11,40 @@ function getStatusClass(status) {
   const normalized = String(status || '').toUpperCase();
   if (normalized === 'ACTIVE') return 'bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/30';
   if (normalized === 'CLOSED') return 'bg-slate-400/15 text-slate-300 ring-1 ring-slate-400/20';
-  if (normalized === 'HANDED_OVER') return 'bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/30';
+  if (normalized === 'HANDED_OVER') return 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-500/50 animate-pulse';
   return 'bg-cyan-400/15 text-cyan-300 ring-1 ring-cyan-400/30';
+}
+
+function getMockInsights(conversation) {
+  if (!conversation) return null;
+  const score = conversation.leadScore || 0;
+  const isHandedOver = conversation.status === 'HANDED_OVER' || !conversation.isBotActive;
+  
+  if (isHandedOver || score >= 50) {
+    return {
+      intent: 'Cần gặp nhân viên / Khiếu nại',
+      sentiment: 'Căng thẳng 😡',
+      estimatedValue: 'Cao',
+      color: 'text-rose-400',
+      suggestions: ['Xin lỗi khách hàng', 'Xin số điện thoại', 'Kiểm tra đơn hàng']
+    };
+  } else if (score >= 15) {
+    return {
+      intent: 'Hỏi giá / Mua hàng',
+      sentiment: 'Tích cực 😊',
+      estimatedValue: '5,000,000 VND',
+      color: 'text-emerald-400',
+      suggestions: ['Gửi bảng giá', 'Tư vấn gói Premium', 'Xin thông tin liên hệ']
+    };
+  } else {
+    return {
+      intent: 'Tìm hiểu chung',
+      sentiment: 'Trung lập 😐',
+      estimatedValue: 'Chưa xác định',
+      color: 'text-cyan-400',
+      suggestions: ['Gửi lời chào', 'Hỏi nhu cầu cụ thể', 'Gửi link website']
+    };
+  }
 }
 
 export default function AdminDashboard() {
@@ -22,12 +54,16 @@ export default function AdminDashboard() {
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState('');
+  const [newMessage, setNewMessage] = useState('');
   const selectedConversationIdRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
   const selectedConversation = useMemo(
     () => conversations.find((item) => item.id === selectedConversationId) || null,
     [conversations, selectedConversationId]
   );
+
+  const insights = useMemo(() => getMockInsights(selectedConversation), [selectedConversation]);
 
   useEffect(() => {
     loadConversations();
@@ -35,11 +71,17 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     selectedConversationIdRef.current = selectedConversationId;
-
     if (selectedConversationId) {
       loadMessages(selectedConversationId);
     }
   }, [selectedConversationId]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   // STOMP WebSocket for realtime updates
   useEffect(() => {
@@ -59,10 +101,7 @@ export default function AdminDashboard() {
     });
 
     client.activate();
-
-    return () => {
-      client.deactivate();
-    };
+    return () => client.deactivate();
   }, []);
 
   function handleAdminEvent(event) {
@@ -70,19 +109,19 @@ export default function AdminDashboard() {
 
     if (event.eventType === 'CONVERSATION_CREATED') {
       setConversations(prev => {
-        // Prevent duplicate if already exists
         if (prev.some(c => c.id === event.conversation.id)) return prev;
         return [event.conversation, ...prev];
       });
     } 
-    else if (event.eventType === 'CONVERSATION_UPDATED') {
+    else if (event.eventType === 'CONVERSATION_UPDATED' || event.eventType === 'LEAD_SCORE_UPDATED') {
+      // Dùng chung cho update status và lead_score
+      if (!event.conversation) return;
       setConversations(prev => {
         const updated = prev.map(c => c.id === event.conversation.id ? event.conversation : c);
         return updated.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
       });
     }
     else if (event.eventType === 'NEW_MESSAGE') {
-      // Update conversation list
       setConversations(prev => {
         let exists = false;
         const updated = prev.map(c => {
@@ -92,18 +131,12 @@ export default function AdminDashboard() {
           }
           return c;
         });
-        
-        if (!exists) {
-          updated.push(event.conversation);
-        }
-        
+        if (!exists) updated.push(event.conversation);
         return updated.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
       });
 
-      // Update message list if the conversation is currently selected
       if (selectedConversationIdRef.current === event.conversation.id && event.message) {
         setMessages(prev => {
-          // Check for dupes
           if (prev.some(m => m.id === event.message.id)) return prev;
           return [...prev, event.message];
         });
@@ -112,15 +145,11 @@ export default function AdminDashboard() {
   }
 
   async function loadConversations(silent = false) {
-    if (!silent) {
-      setLoadingConversations(true);
-    }
+    if (!silent) setLoadingConversations(true);
     setError('');
-
     try {
       const data = await chatService.getAllConversations();
       setConversations(data);
-
       if (data.length > 0 && !selectedConversationId) {
         setSelectedConversationId(data[0].id);
       }
@@ -128,21 +157,13 @@ export default function AdminDashboard() {
       setError('Failed to load conversations');
       console.error(err);
     } finally {
-      if (!silent) {
-        setLoadingConversations(false);
-      }
+      if (!silent) setLoadingConversations(false);
     }
   }
 
   async function loadMessages(conversationId, silent = false) {
-    if (!conversationId) {
-      return;
-    }
-
-    if (!silent) {
-      setLoadingMessages(true);
-    }
-
+    if (!conversationId) return;
+    if (!silent) setLoadingMessages(true);
     try {
       const data = await chatService.getConversationHistory(conversationId);
       setMessages(data);
@@ -150,78 +171,92 @@ export default function AdminDashboard() {
       console.error(err);
       setMessages([]);
     } finally {
-      if (!silent) {
-        setLoadingMessages(false);
-      }
+      if (!silent) setLoadingMessages(false);
     }
   }
 
+  const handleTakeOver = () => {
+    // Tạm thời mock logic Take Over
+    console.log("Taking over conversation:", selectedConversation.id);
+    alert("Tính năng Take Over sẽ gọi API backend để đổi trạng thái sang HANDED_OVER và khóa Bot.");
+  };
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedConversation) return;
+
+    // Send via API (ChatController needs an endpoint, or we can send via WS if we add logic)
+    // Tạm thời mock hiển thị text
+    console.log("Admin sending message:", newMessage);
+    alert("Sẽ tích hợp gửi tin nhắn Admin ở các bước sau.");
+    setNewMessage('');
+  };
+
   return (
-    <div className="mx-auto grid min-h-[calc(100vh-73px)] max-w-7xl grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[360px_1fr] lg:px-6">
-      <aside className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+    <div className="mx-auto grid min-h-[calc(100vh-73px)] lg:h-[calc(100vh-73px)] max-w-[1600px] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[340px_1fr_320px] lg:px-6">
+      
+      {/* CỘT 1: SMART INBOX */}
+      <aside className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
         <div className="border-b border-white/10 px-5 py-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/80">Admin</p>
-              <h2 className="text-lg font-semibold text-white">Conversation List</h2>
+              <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Smart Inbox</p>
+              <h2 className="text-lg font-semibold text-white">Khách Hàng</h2>
             </div>
             <button
-              type="button"
               onClick={() => loadConversations(true)}
               className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/10"
             >
-              Refresh
+              Làm mới
             </button>
           </div>
-          <p className="mt-1 text-sm text-slate-400">Select a conversation to inspect message history.</p>
         </div>
 
-        <div className="max-h-[calc(100vh-200px)] overflow-y-auto p-3">
+        <div className="flex-1 overflow-y-auto p-3">
           {loadingConversations ? (
-            <div className="px-4 py-8 text-center text-slate-400">Loading conversations...</div>
-          ) : error ? (
-            <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
-              {error}
-            </div>
+            <div className="px-4 py-8 text-center text-slate-400">Đang tải...</div>
           ) : conversations.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-slate-400">
-              No conversations found.
+              Chưa có hội thoại nào.
             </div>
           ) : (
             <div className="space-y-3">
               {conversations.map((conversation) => {
                 const isSelected = conversation.id === selectedConversationId;
+                const score = conversation.leadScore || 0;
+                const botActive = conversation.isBotActive !== false;
 
                 return (
                   <button
                     key={conversation.id}
-                    type="button"
                     onClick={() => setSelectedConversationId(conversation.id)}
-                    className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
+                    className={`w-full rounded-2xl border p-4 text-left transition ${
                       isSelected
                         ? 'border-cyan-400/40 bg-cyan-400/10 shadow-lg shadow-cyan-950/20'
                         : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-base font-semibold text-white">Conversation #{conversation.id}</div>
-                        <div className="mt-1 text-sm text-slate-400">Customer #{conversation.customerId} • {conversation.channel}</div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-white">Khách hàng #{conversation.customerId}</span>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${botActive ? 'bg-blue-500/20 text-blue-300' : 'bg-rose-500/20 text-rose-300 border border-rose-500/50 animate-pulse'}`}>
+                            {botActive ? '🤖 Bot Auto' : '👩‍💼 Cần Chăm Sóc'}
+                          </span>
+                        </div>
                       </div>
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${getStatusClass(conversation.status)}`}>
-                        {conversation.status}
-                      </span>
+                      
+                      {/* Lửa thể hiện độ "Hot" của Lead */}
+                      <div className="flex flex-col items-end">
+                        <span className={`text-lg font-bold flex items-center gap-1 ${score >= 50 ? 'text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : score >= 15 ? 'text-amber-500' : 'text-slate-500'}`}>
+                          {score} <span className="text-sm">🔥</span>
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-slate-400">
-                      <div>
-                        <div className="uppercase tracking-wide text-slate-500">Messages</div>
-                        <div className="mt-1 text-sm text-slate-200">{conversation.messageCount ?? 0}</div>
-                      </div>
-                      <div>
-                        <div className="uppercase tracking-wide text-slate-500">Updated</div>
-                        <div className="mt-1 text-sm text-slate-200">{formatDate(conversation.updatedAt)}</div>
-                      </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-2 text-[11px] text-slate-400">
+                      <span className="truncate">{conversation.channel || 'Web'}</span>
+                      <span>{formatDate(conversation.updatedAt)}</span>
                     </div>
                   </button>
                 );
@@ -231,59 +266,154 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      <section className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
-        <div className="border-b border-white/10 px-5 py-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/80">History</p>
-              <h2 className="text-lg font-semibold text-white">
-                {selectedConversation ? `Conversation #${selectedConversation.id}` : 'Select a conversation'}
-              </h2>
-            </div>
-            {selectedConversation && (
-              <div className="flex flex-wrap gap-2 text-xs text-slate-300">
-                <span className="rounded-full bg-white/5 px-3 py-1">Customer #{selectedConversation.customerId}</span>
-                <span className="rounded-full bg-white/5 px-3 py-1">{selectedConversation.channel}</span>
-                <span className={`rounded-full px-3 py-1 ${getStatusClass(selectedConversation.status)}`}>
-                  {selectedConversation.status}
-                </span>
-              </div>
-            )}
+      {/* CỘT 2: KHÔNG GIAN CHAT (ACTIVE WORKSPACE) */}
+      <section className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 bg-slate-900/50">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Workspace</p>
+            <h2 className="text-lg font-semibold text-white">
+              {selectedConversation ? `Hội thoại #${selectedConversation.id}` : 'Chưa chọn hội thoại'}
+            </h2>
           </div>
+          
+          {/* Nút TAKE OVER Khổng lồ */}
+          {selectedConversation && selectedConversation.isBotActive !== false && (
+            <button 
+              onClick={handleTakeOver}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-4 py-2 font-bold text-white shadow-lg shadow-rose-500/30 transition hover:scale-105 hover:shadow-rose-500/50"
+            >
+              <span>⚡</span> TAKE OVER
+            </button>
+          )}
         </div>
 
-        <div className="max-h-[calc(100vh-200px)] overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-900 to-cyan-950/20">
           {!selectedConversation ? (
-            <div className="flex min-h-[280px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.03] text-slate-400">
-              Choose a conversation from the left panel.
+            <div className="flex h-full items-center justify-center text-slate-500">
+              Chọn một khách hàng bên trái để bắt đầu.
             </div>
           ) : loadingMessages ? (
-            <div className="flex min-h-[280px] items-center justify-center text-slate-400">Loading chat history...</div>
-          ) : messages.length === 0 ? (
-            <div className="flex min-h-[280px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.03] text-slate-400">
-              No messages in this conversation yet.
-            </div>
+            <div className="flex h-full items-center justify-center text-slate-500">Đang tải tin nhắn...</div>
           ) : (
-            <div className="space-y-4">
+            <>
               {messages.map((message) => {
                 const isUser = String(message.senderType || '').toLowerCase() === 'user';
+                const isBot = String(message.senderType || '').toLowerCase() === 'bot';
 
                 return (
-                  <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-2xl rounded-3xl px-4 py-3 ${isUser ? 'bg-cyan-500 text-slate-950' : 'bg-white/10 text-slate-100'} border ${isUser ? 'border-cyan-300/40' : 'border-white/10'}`}>
-                      <div className="flex items-center justify-between gap-4 text-xs opacity-80">
-                        <span className="font-semibold uppercase tracking-wide">{message.sender || 'Unknown'}</span>
-                        <span>{formatDate(message.timestamp)}</span>
+                  <div key={message.id} className={`flex ${isUser ? 'justify-start' : 'justify-end'}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-lg ${
+                      isUser 
+                        ? 'bg-slate-800 border border-white/10 text-slate-200 rounded-tl-none' 
+                        : isBot 
+                          ? 'bg-cyan-950/50 border border-cyan-500/30 text-cyan-50 rounded-tr-none'
+                          : 'bg-indigo-600 border border-indigo-400 text-white rounded-tr-none' // Nhân viên
+                    }`}>
+                      <div className="mb-1 flex items-center justify-between gap-4 text-[10px] opacity-70">
+                        <span className="font-bold uppercase tracking-wider text-cyan-300">
+                          {isBot ? '🤖 AI Assistant' : message.sender || 'Customer'}
+                        </span>
+                        <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
                       </div>
-                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{message.content}</p>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
                     </div>
                   </div>
                 );
               })}
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
+
+        {/* Khung nhập liệu */}
+        {selectedConversation && (
+          <div className="border-t border-white/10 bg-slate-900/50 p-4">
+            <form onSubmit={handleSendMessage} className="relative flex items-center">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder={selectedConversation.isBotActive !== false ? "Vui lòng bấm 'TAKE OVER' để nhắn tin..." : "Nhập tin nhắn hỗ trợ khách hàng..."}
+                disabled={selectedConversation.isBotActive !== false}
+                className="w-full rounded-2xl border border-white/10 bg-slate-800/50 py-3 pl-4 pr-12 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <button
+                type="submit"
+                disabled={!newMessage.trim() || selectedConversation.isBotActive !== false}
+                className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500 text-white transition hover:bg-cyan-400 disabled:opacity-50"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+              </button>
+            </form>
+          </div>
+        )}
+      </section>
+
+      {/* CỘT 3: AI INSIGHTS (ORCHESTRATOR) */}
+      <aside className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+        <div className="border-b border-white/10 px-5 py-4 bg-gradient-to-r from-slate-900 to-indigo-950/30">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-indigo-300/80">AI Orchestrator</p>
+          <h2 className="text-lg font-semibold text-white">Mật Vụ Phân Tích</h2>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5">
+          {!selectedConversation ? (
+            <div className="text-center text-sm text-slate-500 mt-10">
+              Đang chờ dữ liệu AI...
+            </div>
+          ) : (
+            <div className="space-y-6">
+              
+              {/* Intent & Value */}
+              <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Hồ Sơ Tiềm Năng</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[10px] uppercase text-slate-500">Ý Định (Intent)</p>
+                    <p className={`text-sm font-semibold ${insights?.color}`}>{insights?.intent}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase text-slate-500">Giá Trị Ước Tính</p>
+                    <p className="text-lg font-bold text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]">
+                      {insights?.estimatedValue}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sentiment */}
+              <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Phân Tích Cảm Xúc</h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl">{insights?.sentiment.split(' ')[1]}</span>
+                  <span className={`text-sm font-semibold ${insights?.color}`}>
+                    {insights?.sentiment.split(' ')[0]}
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Replies */}
+              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-cyan-300">🤖 AI Gợi Ý Trả Lời</h3>
+                <div className="space-y-2">
+                  {insights?.suggestions.map((suggestion, idx) => (
+                    <button 
+                      key={idx}
+                      className="w-full rounded-xl border border-cyan-500/30 bg-slate-900/50 px-3 py-2 text-left text-xs text-cyan-100 transition hover:bg-cyan-500/20 hover:border-cyan-400"
+                    >
+                      "{suggestion}"
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
-      </section>
+      </aside>
+
     </div>
   );
 }

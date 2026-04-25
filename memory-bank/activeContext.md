@@ -29,6 +29,6 @@ Dự án **SmartAgent Hybrid Support** đã chuyển từ giai đoạn định h
 - Loại bỏ mô hình polling cho dashboard admin, thay bằng luồng WebSocket STOMP hoàn chỉnh.
 
 ## Bước Tiếp Theo
-3. Bắt đầu Orchestrator Module (AI scoring, intent/sentiment).
+3. **✅ Bắt đầu Orchestrator Module** (đã hoàn thành bản thiết kế và mock).
 4. Thiết kế Security Module (JWT, role-based access).
 5. Bổ sung test tích hợp cho flow chat end-to-end.

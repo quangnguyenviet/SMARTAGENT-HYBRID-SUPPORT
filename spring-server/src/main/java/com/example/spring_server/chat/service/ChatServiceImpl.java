@@ -170,6 +170,8 @@ public class ChatServiceImpl implements ChatService {
                 .customerId(entity.getCustomerId())
                 .channel(entity.getChannel())
                 .status(entity.getStatus())
+                .isBotActive(entity.getIsBotActive())
+                .leadScore(entity.getLeadScore())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .lastMessageTime(entity.getMessages().isEmpty() ? 

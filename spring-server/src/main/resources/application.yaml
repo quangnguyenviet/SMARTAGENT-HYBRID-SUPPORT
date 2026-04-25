@@ -15,3 +15,18 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Springdoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs                          # OpenAPI JSON endpoint
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html                      # Swagger UI path
+    tagsSorter: alpha                           # Sort tags alphabetically
+    operationsSorter: alpha                     # Sort operations alphabetically
+    displayOperationId: true                    # Show operation IDs
+    filter: true                                # Enable search/filter
+    show-common-extensions: true
+  cache:
+    disabled: true                              # Refresh on every reload (dev mode)

@@ -1,0 +1,455 @@
+openapi: 3.0.0
+info:
+  title: SmartAgent Hybrid Support API
+  description: |
+    API documentation for SmartAgent - AI-powered hybrid support system
+    with real-time chat, lead scoring, and human handover.
+  version: 1.0.0
+  contact:
+    name: SmartAgent Team
+    url: https://smartagent.com
+servers:
+  - url: http://localhost:8080
+    description: Development Server
+  - url: https://api.smartagent.com
+    description: Production Server
+
+paths:
+  /api/conversations:
+    post:
+      summary: Create a new conversation
+      description: Creates a new conversation for a customer
+      operationId: createConversation
+      tags:
+        - Chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConversationRequest'
+      responses:
+        '201':
+          description: Conversation created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_ConversationDTO'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/conversations/{id}:
+    get:
+      summary: Get conversation by ID
+      description: Retrieves a specific conversation
+      operationId: getConversation
+      tags:
+        - Chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Conversation found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_ConversationDTO'
+        '404':
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+    delete:
+      summary: Delete a conversation
+      description: Deletes a conversation and all associated messages
+      operationId: deleteConversation
+      tags:
+        - Chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Conversation deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Void'
+        '404':
+          description: Conversation not found
+        '500':
+          description: Internal server error
+
+  /api/conversations/customer/{customerId}:
+    get:
+      summary: Get all conversations for a customer
+      description: Retrieves all conversations associated with a customer
+      operationId: getConversationsByCustomer
+      tags:
+        - Chat
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Conversations found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_ConversationList'
+
+  /api/conversations/{id}/messages:
+    get:
+      summary: Get all messages in a conversation
+      description: Retrieves the complete message history for a conversation
+      operationId: getConversationHistory
+      tags:
+        - Chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Messages found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_MessageList'
+        '404':
+          description: Conversation not found
+        '500':
+          description: Internal server error
+
+    post:
+      summary: Send a message
+      description: Sends a message in a conversation (REST alternative to WebSocket)
+      operationId: sendMessage
+      tags:
+        - Chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_MessageDTO'
+        '404':
+          description: Conversation not found
+        '500':
+          description: Internal server error
+
+  /api/conversations/{id}/messages/recent:
+    get:
+      summary: Get recent messages
+      description: Retrieves recent N messages from a conversation
+      operationId: getRecentMessages
+      tags:
+        - Chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+            description: Number of recent messages to fetch (max 100)
+      responses:
+        '200':
+          description: Recent messages found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_MessageList'
+
+  /api/conversations/{id}/status:
+    patch:
+      summary: Update conversation status
+      description: Updates the status of a conversation
+      operationId: updateConversationStatus
+      tags:
+        - Chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ACTIVE, HANDED_OVER, CLOSED, ARCHIVED]
+      responses:
+        '200':
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Void'
+        '404':
+          description: Conversation not found
+
+  /api/conversations/{id}/close:
+    put:
+      summary: Close a conversation
+      description: Closes an active conversation
+      operationId: closeConversation
+      tags:
+        - Chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Conversation closed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Void'
+        '404':
+          description: Conversation not found
+
+components:
+  schemas:
+    ConversationDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        customerId:
+          type: integer
+          format: int64
+        channel:
+          type: string
+          example: zalo
+        status:
+          type: string
+          enum: [ACTIVE, HANDED_OVER, CLOSED, ARCHIVED]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastMessageTime:
+          type: string
+          format: date-time
+          nullable: true
+        messageCount:
+          type: integer
+          format: int64
+      required:
+        - id
+        - customerId
+        - channel
+        - status
+
+    MessageDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        conversationId:
+          type: integer
+          format: int64
+        sender:
+          type: string
+          example: customer_123
+        senderType:
+          type: string
+          enum: [USER, BOT, AGENT]
+        content:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - id
+        - conversationId
+        - sender
+        - senderType
+        - content
+        - timestamp
+
+    CreateConversationRequest:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          format: int64
+        channel:
+          type: string
+          example: zalo
+      required:
+        - customerId
+        - channel
+
+    SendMessageRequest:
+      type: object
+      properties:
+        sender:
+          type: string
+          example: customer_123
+        senderType:
+          type: string
+          enum: [USER, BOT, AGENT]
+        content:
+          type: string
+      required:
+        - sender
+        - senderType
+        - content
+
+    ApiResponse_ConversationDTO:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ConversationDTO'
+        timestamp:
+          type: integer
+          format: int64
+
+    ApiResponse_MessageDTO:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/MessageDTO'
+        timestamp:
+          type: integer
+          format: int64
+
+    ApiResponse_ConversationList:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationDTO'
+        timestamp:
+          type: integer
+          format: int64
+
+    ApiResponse_MessageList:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageDTO'
+        timestamp:
+          type: integer
+          format: int64
+
+    ApiResponse_Void:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: 'null'
+        timestamp:
+          type: integer
+          format: int64
+
+    ApiResponse_Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        data:
+          type: 'null'
+        timestamp:
+          type: integer
+          format: int64
+
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT authentication token
+
+security:
+  - Bearer: []
+
+tags:
+  - name: Chat
+    description: Chat module operations - manage conversations and messages

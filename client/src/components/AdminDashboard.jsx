@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import chatService from '../services/chatService';
+import { Client } from '@stomp/stompjs';
 
 function formatDate(value) {
   if (!value) return '—';
@@ -40,29 +41,75 @@ export default function AdminDashboard() {
     }
   }, [selectedConversationId]);
 
+  // STOMP WebSocket for realtime updates
   useEffect(() => {
-    const conversationInterval = setInterval(() => {
-      loadConversations(true);
-    }, 5000);
+    const client = new Client({
+      brokerURL: 'ws://localhost:8080/ws',
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log('Admin STOMP connected');
+        client.subscribe('/topic/admin/conversations', (message) => {
+          if (message.body) {
+            const event = JSON.parse(message.body);
+            handleAdminEvent(event);
+          }
+        });
+      },
+      onStompError: (frame) => console.error('Admin STOMP error', frame)
+    });
+
+    client.activate();
 
     return () => {
-      clearInterval(conversationInterval);
+      client.deactivate();
     };
   }, []);
 
-  useEffect(() => {
-    if (!selectedConversationId) {
-      return undefined;
+  function handleAdminEvent(event) {
+    if (!event || !event.eventType) return;
+
+    if (event.eventType === 'CONVERSATION_CREATED') {
+      setConversations(prev => {
+        // Prevent duplicate if already exists
+        if (prev.some(c => c.id === event.conversation.id)) return prev;
+        return [event.conversation, ...prev];
+      });
+    } 
+    else if (event.eventType === 'CONVERSATION_UPDATED') {
+      setConversations(prev => {
+        const updated = prev.map(c => c.id === event.conversation.id ? event.conversation : c);
+        return updated.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      });
     }
+    else if (event.eventType === 'NEW_MESSAGE') {
+      // Update conversation list
+      setConversations(prev => {
+        let exists = false;
+        const updated = prev.map(c => {
+          if (c.id === event.conversation.id) {
+            exists = true;
+            return event.conversation;
+          }
+          return c;
+        });
+        
+        if (!exists) {
+          updated.push(event.conversation);
+        }
+        
+        return updated.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      });
 
-    const messageInterval = setInterval(() => {
-      loadMessages(selectedConversationIdRef.current, true);
-    }, 2000);
-
-    return () => {
-      clearInterval(messageInterval);
-    };
-  }, [selectedConversationId]);
+      // Update message list if the conversation is currently selected
+      if (selectedConversationIdRef.current === event.conversation.id && event.message) {
+        setMessages(prev => {
+          // Check for dupes
+          if (prev.some(m => m.id === event.message.id)) return prev;
+          return [...prev, event.message];
+        });
+      }
+    }
+  }
 
   async function loadConversations(silent = false) {
     if (!silent) {
@@ -120,7 +167,7 @@ export default function AdminDashboard() {
             </div>
             <button
               type="button"
-              onClick={loadConversations}
+              onClick={() => loadConversations(true)}
               className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/10"
             >
               Refresh

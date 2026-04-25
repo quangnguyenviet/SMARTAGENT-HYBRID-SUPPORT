@@ -45,6 +45,24 @@ public class Conversation {
     private String status;
     
     /**
+     * Cờ đánh dấu Bot AI có đang tự động trả lời hay không
+     */
+    @Column(name = "is_bot_active", nullable = false)
+    private Boolean isBotActive = true;
+    
+    /**
+     * Điểm số đánh giá độ tiềm năng của khách hàng (Lead Score)
+     */
+    @Column(name = "lead_score", nullable = false)
+    private Integer leadScore = 0;
+    
+    /**
+     * ID của nhân viên (agent) được phân công phụ trách khi handover
+     */
+    @Column(name = "assigned_agent_id")
+    private Long assignedAgentId;
+    
+    /**
      * Thời gian tạo conversation
      */
     @Column(nullable = false, updatable = false)

@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Sort;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.example.spring_server.chat.dto.AdminDashboardEvent;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,6 +31,7 @@ public class ChatServiceImpl implements ChatService {
     
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
+    private final SimpMessagingTemplate messagingTemplate;
     
     @Override
     public ConversationDTO createConversation(Long customerId, String channel) {
@@ -38,7 +41,16 @@ public class ChatServiceImpl implements ChatService {
         conversation.setStatus("ACTIVE");
         
         Conversation saved = conversationRepository.save(conversation);
-        return entityToDTO(saved);
+        ConversationDTO dto = entityToDTO(saved);
+        
+        // Broadcast to admin dashboard
+        messagingTemplate.convertAndSend("/topic/admin/conversations", 
+            AdminDashboardEvent.builder()
+                .eventType(AdminDashboardEvent.EventType.CONVERSATION_CREATED)
+                .conversation(dto)
+                .build());
+                
+        return dto;
     }
     
     @Override
@@ -80,7 +92,20 @@ public class ChatServiceImpl implements ChatService {
         conversation.setUpdatedAt(LocalDateTime.now());
         conversationRepository.save(conversation);
         
-        return entityToDTO(saved);
+        MessageDTO dto = entityToDTO(saved);
+        
+        // Broadcast to admin dashboard
+        messagingTemplate.convertAndSend("/topic/admin/conversations", 
+            AdminDashboardEvent.builder()
+                .eventType(AdminDashboardEvent.EventType.NEW_MESSAGE)
+                .conversation(entityToDTO(conversation))
+                .message(dto)
+                .build());
+                
+        // Broadcast to the specific conversation room
+        messagingTemplate.convertAndSend("/topic/chat/" + conversationId, dto);
+        
+        return dto;
     }
     
     @Override
@@ -113,7 +138,15 @@ public class ChatServiceImpl implements ChatService {
                 .orElseThrow(() -> new IllegalArgumentException("Conversation not found: " + conversationId));
         
         conversation.setStatus(status);
+        conversation.setUpdatedAt(LocalDateTime.now());
         conversationRepository.save(conversation);
+        
+        // Broadcast update to admin
+        messagingTemplate.convertAndSend("/topic/admin/conversations", 
+            AdminDashboardEvent.builder()
+                .eventType(AdminDashboardEvent.EventType.CONVERSATION_UPDATED)
+                .conversation(entityToDTO(conversation))
+                .build());
     }
     
     @Override

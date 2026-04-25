@@ -1,8 +1,8 @@
 # Theo Dõi Tiến Độ (Progress)
 
 ## Trạng Thái Tổng Quan
-- **Giai đoạn (Phase)**: Khởi tạo (Phase 0)
-- **Tình trạng**: Đang định hình tài liệu hệ thống và kiến trúc dựa trên ý tưởng từ `README.md`.
+- **Giai đoạn (Phase)**: Triển khai MVP Chat (sau Phase 0)
+- **Tình trạng**: Đã có backend chat hoạt động và frontend admin/customer để test thực tế.
 
 ## Những Việc Đã Hoàn Thành (What Works)
 - [x] Lên ý tưởng dự án và xác định các tính năng cốt lõi (Quy định tại `README.md`).
@@ -13,29 +13,31 @@
   - `systemPatterns.md`
   - `techContext.md`
   - `activeContext.md`
+- [x] Hoàn thành Chat Module backend (REST + WebSocket + Flyway schema).
+- [x] Ổn định tích hợp realtime chat (CORS, sự kiện WS, serialization thời gian).
+- [x] Hoàn thành giao diện khách hàng (`ChatWindow`) và giao diện admin (`AdminDashboard`).
+- [x] Điều hướng bằng React Router (`/chat`, `/admin`) và cập nhật style tổng thể.
+- [x] Tạo commit tính năng mới: `09c1391` (admin dashboard + routed chat views).
+- [x] Bổ sung push realtime cho admin (STOMP WebSocket broker, loại bỏ hoàn toàn polling).
 
 ## Những Việc Đang Thực Hiện (Current Status)
-- [x] Phê duyệt và chốt danh sách Tech Stack công nghệ (React, Spring Boot Monolith, FastAPI, Postgres, Redis).
-- [x] Khởi tạo Spring Boot Backend Project cơ bản (Maven, Flyway migrations).
-- [x] **Thiết kế chi tiết Chat Module** (1.1-1.4 trong checklist):
-  - Package structure & analysis
-  - Core classes & interfaces (2 entities, 2 repositories, service layer)
-  - WebSocket & real-time communication (handler, config, 9 event types)
-  - REST API endpoints & DTOs (9 endpoints, 6 DTOs)
-- [ ] Thiết kế chi tiết Orchestrator Module (2.1-2.5 trong checklist)
-- [ ] Thiết kế chi tiết Security Module (3.1-3.5 trong checklist)
+- [x] Chốt và áp dụng stack frontend: React + Tailwind + react-router-dom.
+- [x] Mở rộng API admin lấy danh sách hội thoại và lịch sử để giám sát.
+- [x] Triển khai cơ chế auto-refresh (polling) cho admin dashboard (Sau đó đã nâng cấp thay thế bằng luồng WebSocket STOMP Pub/Sub).
+- [x] **Đã hoàn thành**: Chuyển đổi toàn bộ kiến trúc sang STOMP Message Broker, admin nhận realtime push không cần polling.
+- [x] Dọn các artifacts cài npm nhầm trong `spring-server` (`node_modules`, `package.json`, `package-lock.json`).
+- [ ] Thiết kế/triển khai Orchestrator Module (AI integration, lead scoring, handover logic).
+- [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
 
 ## Những Việc Cần Làm Tiếp Theo (What's Left to Build)
 - **Thiết Kế (Design)**:
-  - Thiết kế chi tiết Orchestrator Module (AI integration, lead scoring, handover logic)
-  - Thiết kế chi tiết Security Module (JWT, authentication, authorization)
+  - Thiết kế chi tiết Orchestrator Module (AI integration, lead scoring, handover logic).
+  - Thiết kế chi tiết Security Module (JWT, authentication, authorization).
   - Vẽ các sơ đồ kiến trúc (Architecture Diagram, Sequence Diagram, Data Flow)
   - Thiết kế Mockup/Wireframe cho Sales-Centric Dashboard.
 - **Phát Triển (Development)**:
-  - Implement classes & interfaces theo design (Chat Module - ready to implement)
-  - Implement Orchestrator Module classes
-  - Implement Security Module classes
-  - Khởi tạo Frontend Project (React + Tailwind CSS).
+  - Implement Orchestrator Module classes.
+  - Implement Security Module classes.
   - Tích hợp kết nối kênh Chat (vd: Zalo, Facebook Messenger, Website).
   - Xây dựng mô-đun AI Intent & Sentiment Analysis.
   - Xây dựng hệ thống Routing / Handover Engine.

@@ -1,35 +1,35 @@
 package com.example.spring_server.chat.config;
 
-import com.example.spring_server.chat.handler.ChatWebSocketHandler;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.socket.config.annotation.EnableWebSocket;
-import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
-import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 /**
  * WebSocketConfig
  * 
- * Configures WebSocket endpoints, handlers, and interceptors.
- * Enables real-time communication between client & server.
+ * Configures STOMP WebSocket endpoints and message brokers.
+ * Enables real-time Pub/Sub communication for both Customer and Admin.
  */
 @Configuration
-@EnableWebSocket
-@RequiredArgsConstructor
-public class WebSocketConfig implements WebSocketConfigurer {
-    
-    private final ChatWebSocketHandler chatWebSocketHandler;
-    
-    /**
-     * Register WebSocket handlers and set CORS settings
-     */
+@EnableWebSocketMessageBroker
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
     @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(chatWebSocketHandler, "/ws/chat")
-                .setAllowedOrigins("http://localhost:5173", "http://localhost:3000")
-                .addInterceptors(new ChatWebSocketHandshakeInterceptor());
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Khởi tạo endpoint WebSocket chính cho toàn hệ thống
+        registry.addEndpoint("/ws")
+                .setAllowedOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:3001");
+                // .withSockJS(); // Bỏ qua SockJS để dùng STOMP trực tiếp qua WebSockets chuẩn
+    }
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        // Các destination bắt đầu bằng "/topic" hoặc "/queue" sẽ được Broker xử lý và đẩy xuống client đang subscribe
+        registry.enableSimpleBroker("/topic", "/queue");
         
-        // Additional WebSocket endpoints can be registered here
-        // Example: registry.addHandler(notificationHandler, "/ws/notifications")
+        // Các tin nhắn từ client gửi lên có prefix "/app" sẽ được map vào các @MessageMapping trong Controller
+        registry.setApplicationDestinationPrefixes("/app");
     }
 }

@@ -22,10 +22,21 @@ Hệ thống SmartAgent được thiết kế theo hướng **Modular Monolith**
 
 ### 4. Sales-Centric Dashboard & AI Sales Assist
 - **Nhiệm vụ**: Giao diện tập trung dành cho nhân viên bán hàng.
-- **Thiết kế**: Real-time board sử dụng WebSocket. Hội thoại có điểm số tiềm năng cao (High Score) sẽ tự động nổi lên trên đầu danh sách (Push-to-top). Trợ lý AI sẽ gợi ý câu trả lời và template báo giá ở sidebar.
+- **Thiết kế hiện tại**:
+	- Dashboard admin đã có danh sách hội thoại + khung lịch sử chat chi tiết.
+	- Cập nhật dữ liệu bằng polling định kỳ (giải pháp trung gian để đảm bảo thấy tin mới mà không reload).
+	- Điều hướng tách biệt theo route: `/admin` cho vận hành nội bộ, `/chat` cho giao diện khách.
+- **Hướng nâng cấp**:
+	- Chuyển dần từ polling sang push realtime đầy đủ cho dashboard qua kênh WebSocket admin.
 
 ## Quy Trình Vận Hành (Workflow Pattern)
 1. **Giai đoạn 1 (Smart Screening)**: Bot thu thập thông tin cơ bản.
 2. **Giai đoạn 2 (Lead Scoring)**: AI phát hiện Intent (ví dụ: "Mua 100 cái có giảm giá?").
 3. **Giai đoạn 3 (Live Sales Engagement)**: Notification "Kèo ngon" được bắn về Dashboard, nhân viên giành quyền xử lý (Take over).
 4. **Giai đoạn 4 (Conversion & Feedback)**: Nhân viên chốt đơn, trả quyền cho Bot (Release control). Bot tiếp tục thu thập địa chỉ, thanh toán và đánh giá.
+
+## Mẫu Triển Khai Hiện Tại (As-Is)
+1. Khách gửi tin từ màn `/chat`.
+2. Hệ thống lưu lịch sử qua REST + cập nhật realtime cho phiên đang mở bằng WebSocket.
+3. Màn `/admin` lấy danh sách hội thoại và lịch sử theo chu kỳ polling.
+4. Admin chọn hội thoại để xem full timeline trước khi can thiệp thủ công.

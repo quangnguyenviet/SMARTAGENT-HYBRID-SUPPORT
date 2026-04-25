@@ -9,10 +9,14 @@ export default function ChatWindow() {
   const [connected, setConnected] = useState(false);
   const [customerId, setCustomerId] = useState(1); // Mock customer ID
   const messagesEndRef = useRef(null);
+  const initialized = useRef(false);
 
   // Initialize chat on mount
   useEffect(() => {
-    initializeChat();
+    if (!initialized.current) {
+      initialized.current = true;
+      initializeChat();
+    }
     return () => {
       chatService.disconnect();
     };
@@ -31,18 +35,20 @@ export default function ChatWindow() {
       if (eventType === 'connection_established') {
         setConnected(true);
         console.log('Chat connected');
-      } else if (eventType === 'user_message' || eventType === 'bot_response' || eventType === 'message_ack') {
+      } else if (eventType === 'new_message' || eventType === 'user_message' || eventType === 'bot_response') {
         const newMessage = {
-          id: Date.now(),
+          id: message.id || Date.now(),
           sender: message.sender,
           senderType: message.senderType,
           content: message.content,
-          timestamp: new Date().toLocaleTimeString(),
+          timestamp: message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString(),
         };
 
-        if (eventType !== 'message_ack') {
-          setMessages(prev => [...prev, newMessage]);
-        }
+        setMessages(prev => {
+          // Prevent duplicates if optimistic rendering was used or message loops back
+          if (prev.some(m => m.id === newMessage.id)) return prev;
+          return [...prev, newMessage];
+        });
       }
     });
 
@@ -93,10 +99,9 @@ export default function ChatWindow() {
       timestamp: new Date().toLocaleTimeString(),
     };
 
-    // Add to local UI immediately for optimistic rendering
-    setMessages(prev => [...prev, message]);
+    // Removed optimistic rendering - we will rely on STOMP pub-sub returning the message back to us instantly
 
-    // Send via WebSocket
+    // Send via WebSocket STOMP
     chatService.sendWebSocketMessage(
       conversationId,
       'Customer',

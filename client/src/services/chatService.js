@@ -1,13 +1,14 @@
+import { Client } from '@stomp/stompjs';
+
 const API_BASE = 'http://localhost:8080/api';
-const WS_URL = 'ws://localhost:8080/ws/chat';
+const WS_BROKER_URL = 'ws://localhost:8080/ws';
 
 class ChatService {
   constructor() {
-    this.ws = null;
+    this.client = null;
     this.listeners = [];
     this.conversationId = null;
-    this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
+    this.subscription = null;
   }
 
   // REST API - Create new conversation
@@ -70,97 +71,89 @@ class ChatService {
     }
   }
 
-  // WebSocket - Connect and listen
+  // STOMP WebSocket - Connect and listen
   connectWebSocket(conversationId) {
     return new Promise((resolve, reject) => {
-      try {
-        const socket = new WebSocket(WS_URL);
-        this.ws = socket;
-
-        socket.onopen = () => {
-          console.log('WebSocket connected');
-          this.reconnectAttempts = 0;
+      this.conversationId = conversationId;
+      
+      this.client = new Client({
+        brokerURL: WS_BROKER_URL,
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+        onConnect: () => {
+          console.log('STOMP connected');
+          
+          // Emit internal event for UI to know it's connected
+          this.notifyListeners({ eventType: 'connection_established' });
+          
+          // Subscribe to the specific room
+          this.subscription = this.client.subscribe(`/topic/chat/${conversationId}`, (message) => {
+            if (message.body) {
+              const parsedMessage = JSON.parse(message.body);
+              // Backend MessageDTO -> Add eventType so ChatWindow handles it
+              parsedMessage.eventType = 'new_message';
+              this.notifyListeners(parsedMessage);
+            }
+          });
           resolve();
-        };
+        },
+        onStompError: (frame) => {
+          console.error('Broker reported error: ' + frame.headers['message']);
+          console.error('Additional details: ' + frame.body);
+          reject(new Error(frame.headers['message']));
+        },
+        onWebSocketClose: () => {
+          console.log('STOMP connection closed');
+        }
+      });
 
-        socket.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            console.log('Received:', message);
-            this.notifyListeners(message);
-          } catch (error) {
-            console.error('Failed to parse message:', error);
-          }
-        };
-
-        socket.onerror = (error) => {
-          console.error('WebSocket error:', error);
-          reject(error);
-        };
-
-        socket.onclose = () => {
-          console.log('WebSocket closed');
-          if (this.ws === socket) {
-            this.ws = null;
-          }
-          this.attemptReconnect(conversationId);
-        };
-      } catch (error) {
-        reject(error);
-      }
+      this.client.activate();
     });
   }
 
-  // Attempt to reconnect WebSocket
-  attemptReconnect(conversationId) {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
-      const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
-      console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})...`);
-      setTimeout(() => this.connectWebSocket(conversationId), delay);
-    }
-  }
-
-  // WebSocket - Send message
+  // STOMP WebSocket - Send message
   sendWebSocketMessage(conversationId, sender, senderType, content) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({
-        eventType: 'user_message',
-        conversationId,
-        sender,
-        senderType,
-        content,
-      }));
+    if (this.client && this.client.connected) {
+      this.client.publish({
+        destination: '/app/chat.sendMessage',
+        body: JSON.stringify({
+          eventType: 'USER_MESSAGE',
+          conversationId,
+          sender,
+          senderType,
+          content,
+        })
+      });
     } else {
-      console.warn('WebSocket not connected');
+      console.warn('STOMP client not connected');
     }
   }
 
-  // Check whether socket is ready for interaction
   isConnected() {
-    return this.ws && this.ws.readyState === WebSocket.OPEN;
+    return this.client && this.client.connected;
   }
 
-  // Register listener for WebSocket messages
   onMessage(callback) {
     this.listeners.push(callback);
   }
 
-  // Remove all registered listeners
   clearListeners() {
     this.listeners = [];
   }
 
-  // Notify all listeners
   notifyListeners(message) {
     this.listeners.forEach(listener => listener(message));
   }
 
-  // Disconnect WebSocket
   disconnect() {
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+      this.subscription = null;
+    }
+    if (this.client) {
+      this.client.deactivate();
+      this.client = null;
     }
   }
 }

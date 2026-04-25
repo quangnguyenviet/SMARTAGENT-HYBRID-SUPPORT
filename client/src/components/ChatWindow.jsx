@@ -26,10 +26,12 @@ export default function ChatWindow() {
   // Listen for incoming WebSocket messages
   useEffect(() => {
     chatService.onMessage((message) => {
-      if (message.eventType === 'CONNECTION_ESTABLISHED') {
+      const eventType = String(message.eventType || '').toLowerCase();
+
+      if (eventType === 'connection_established') {
         setConnected(true);
         console.log('Chat connected');
-      } else if (message.eventType === 'USER_MESSAGE' || message.eventType === 'BOT_RESPONSE') {
+      } else if (eventType === 'user_message' || eventType === 'bot_response' || eventType === 'message_ack') {
         const newMessage = {
           id: Date.now(),
           sender: message.sender,
@@ -37,9 +39,16 @@ export default function ChatWindow() {
           content: message.content,
           timestamp: new Date().toLocaleTimeString(),
         };
-        setMessages(prev => [...prev, newMessage]);
+
+        if (eventType !== 'message_ack') {
+          setMessages(prev => [...prev, newMessage]);
+        }
       }
     });
+
+    return () => {
+      chatService.clearListeners();
+    };
   }, []);
 
   // Create conversation and connect WebSocket
@@ -74,7 +83,7 @@ export default function ChatWindow() {
   // Send message
   function handleSendMessage(e) {
     e.preventDefault();
-    if (!inputValue.trim() || !conversationId || !connected) return;
+    if (!inputValue.trim() || !conversationId || !chatService.isConnected()) return;
 
     const message = {
       id: Date.now(),
@@ -84,7 +93,7 @@ export default function ChatWindow() {
       timestamp: new Date().toLocaleTimeString(),
     };
 
-    // Add to local UI
+    // Add to local UI immediately for optimistic rendering
     setMessages(prev => [...prev, message]);
 
     // Send via WebSocket

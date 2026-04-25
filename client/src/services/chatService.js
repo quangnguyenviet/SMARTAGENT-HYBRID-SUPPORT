@@ -62,20 +62,16 @@ class ChatService {
   connectWebSocket(conversationId) {
     return new Promise((resolve, reject) => {
       try {
-        this.ws = new WebSocket(WS_URL);
+        const socket = new WebSocket(WS_URL);
+        this.ws = socket;
 
-        this.ws.onopen = () => {
+        socket.onopen = () => {
           console.log('WebSocket connected');
           this.reconnectAttempts = 0;
-          // Send connection message with conversation ID
-          this.ws.send(JSON.stringify({
-            eventType: 'CONNECTION_ESTABLISHED',
-            conversationId,
-          }));
           resolve();
         };
 
-        this.ws.onmessage = (event) => {
+        socket.onmessage = (event) => {
           try {
             const message = JSON.parse(event.data);
             console.log('Received:', message);
@@ -85,13 +81,16 @@ class ChatService {
           }
         };
 
-        this.ws.onerror = (error) => {
+        socket.onerror = (error) => {
           console.error('WebSocket error:', error);
           reject(error);
         };
 
-        this.ws.onclose = () => {
+        socket.onclose = () => {
           console.log('WebSocket closed');
+          if (this.ws === socket) {
+            this.ws = null;
+          }
           this.attemptReconnect(conversationId);
         };
       } catch (error) {
@@ -114,7 +113,7 @@ class ChatService {
   sendWebSocketMessage(conversationId, sender, senderType, content) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({
-        eventType: 'USER_MESSAGE',
+        eventType: 'user_message',
         conversationId,
         sender,
         senderType,
@@ -125,9 +124,19 @@ class ChatService {
     }
   }
 
+  // Check whether socket is ready for interaction
+  isConnected() {
+    return this.ws && this.ws.readyState === WebSocket.OPEN;
+  }
+
   // Register listener for WebSocket messages
   onMessage(callback) {
     this.listeners.push(callback);
+  }
+
+  // Remove all registered listeners
+  clearListeners() {
+    this.listeners = [];
   }
 
   // Notify all listeners

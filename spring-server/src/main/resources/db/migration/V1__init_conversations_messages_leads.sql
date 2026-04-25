@@ -4,11 +4,13 @@
 CREATE TABLE conversations (
     id BIGSERIAL PRIMARY KEY,
     customer_id BIGINT NOT NULL,
+    channel VARCHAR(50) DEFAULT 'web',
+    status VARCHAR(20) DEFAULT 'OPEN',
     is_bot_active BOOLEAN DEFAULT TRUE,
     lead_score INTEGER DEFAULT 0,
-    status VARCHAR(20) DEFAULT 'OPEN',
     assigned_agent_id BIGINT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =========================
@@ -17,9 +19,11 @@ CREATE TABLE conversations (
 CREATE TABLE messages (
     id BIGSERIAL PRIMARY KEY,
     conversation_id BIGINT NOT NULL,
+    sender VARCHAR(100),
     sender_type VARCHAR(20) NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_messages_conversation
         FOREIGN KEY (conversation_id)
@@ -44,13 +48,20 @@ CREATE TABLE potential_leads (
 );
 
 -- =========================
--- Indexes (khuyến nghị)
+-- 4. Indexes
 -- =========================
+CREATE INDEX idx_conversations_customer_id 
+ON conversations(customer_id);
+
+CREATE INDEX idx_conversations_channel 
+ON conversations(channel);
+
 CREATE INDEX idx_messages_conversation_id 
 ON messages(conversation_id);
+
+CREATE INDEX idx_messages_timestamp 
+ON messages(timestamp DESC);
 
 CREATE INDEX idx_leads_conversation_id 
 ON potential_leads(conversation_id);
 
-CREATE INDEX idx_conversations_customer_id 
-ON conversations(customer_id);

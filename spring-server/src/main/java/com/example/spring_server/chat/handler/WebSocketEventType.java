@@ -63,8 +63,12 @@ public enum WebSocketEventType {
     }
     
     public static WebSocketEventType fromValue(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Unknown event type: " + value);
+        }
+
         for (WebSocketEventType type : WebSocketEventType.values()) {
-            if (type.value.equals(value)) {
+            if (type.value.equalsIgnoreCase(value) || type.name().equalsIgnoreCase(value)) {
                 return type;
             }
         }

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import chatService from '../services/chatService';
-import { Client } from '@stomp/stompjs';
 
 function formatDate(value) {
   if (!value) return '—';
@@ -15,27 +14,6 @@ function getStatusClass(status) {
   return 'bg-cyan-400/15 text-cyan-300 ring-1 ring-cyan-400/30';
 }
 
-function getConversationInsights(conversation) {
-  if (!conversation) return null;
-  
-  const score = conversation.leadScore || 0;
-  const isHandedOver = conversation.status === 'HANDED_OVER' || !conversation.isBotActive;
-  
-  // Ưu tiên dữ liệu thật từ AI Backend
-  const intent = conversation.intentSummary || (isHandedOver ? 'Cần hỗ trợ trực tiếp' : 'Đang tìm hiểu');
-  const sentiment = conversation.sentiment || (score >= 30 ? 'Tích cực 😊' : 'Trung lập 😐');
-  
-  let color = 'text-cyan-400';
-  if (isHandedOver || score >= 50) color = 'text-rose-400';
-  else if (score >= 15) color = 'text-emerald-400';
-
-  return {
-    intent,
-    sentiment,
-    color,
-    suggestions: isHandedOver ? ['Xin lỗi khách hàng', 'Hỏi số điện thoại'] : ['Tư vấn tính năng', 'Gửi báo giá']
-  };
-}
 
 export default function AdminDashboard() {
   const [conversations, setConversations] = useState([]);
@@ -66,7 +44,6 @@ export default function AdminDashboard() {
 
   const filteredConversations = inboxTab === 'care' ? needsCareConversations : conversations;
 
-  const insights = useMemo(() => getConversationInsights(selectedConversation), [selectedConversation]);
 
   useEffect(() => {
     loadConversations();
@@ -213,7 +190,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[340px_1fr_320px] lg:px-6 overflow-hidden" style={{ height: 'calc(100vh - 73px)' }}>
+      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[340px_1fr] lg:px-6 overflow-hidden" style={{ height: 'calc(100vh - 73px)' }}>
         
         {/* CỘT 1: SMART INBOX */}
         <aside className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
@@ -413,62 +390,6 @@ export default function AdminDashboard() {
           )}
         </section>
 
-        {/* CỘT 3: AI INSIGHTS (ORCHESTRATOR) */}
-        <aside className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
-          <div className="border-b border-white/10 px-5 py-4 bg-gradient-to-r from-slate-900 to-indigo-950/30">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-indigo-300/80">AI Orchestrator</p>
-            <h2 className="text-lg font-semibold text-white">Mật Vụ Phân Tích</h2>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-5">
-            {!selectedConversation ? (
-              <div className="text-center text-sm text-slate-500 mt-10">
-                Đang chờ dữ liệu AI...
-              </div>
-            ) : (
-              <div className="space-y-6">
-                
-                {/* Intent & Value */}
-                <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
-                  <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Hồ Sơ Tiềm Năng</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-[10px] uppercase text-slate-500">Ý Định (Intent)</p>
-                      <p className={`text-sm font-semibold ${insights?.color}`}>{insights?.intent}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sentiment */}
-                <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
-                  <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Phân Tích Cảm Xúc</h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-3xl">{insights?.sentiment.split(' ')[1]}</span>
-                    <span className={`text-sm font-semibold ${insights?.color}`}>
-                      {insights?.sentiment.split(' ')[0]}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Quick Replies */}
-                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-4 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
-                  <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-cyan-300">🤖 AI Gợi Ý Trả Lời</h3>
-                  <div className="space-y-2">
-                    {insights?.suggestions.map((suggestion, idx) => (
-                      <button 
-                        key={idx}
-                        className="w-full rounded-xl border border-cyan-500/30 bg-slate-900/50 px-3 py-2 text-left text-xs text-cyan-100 transition hover:bg-cyan-500/20 hover:border-cyan-400"
-                      >
-                        "{suggestion}"
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </aside>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@
 - [x] Lên ý tưởng, xác định tính năng cốt lõi.
 - [x] Thiết lập Memory Bank đầy đủ.
 - [x] Kiến trúc STOMP Message Broker (Pub/Sub) thay thế hoàn toàn Raw WebSocket/Polling.
+- [x] Containerization: Dockerfile + Docker Compose cho toàn bộ hệ thống.
 
 ### Backend Chat Module
 - [x] Conversation/Message entities + Flyway schema.

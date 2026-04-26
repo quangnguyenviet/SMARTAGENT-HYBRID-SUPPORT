@@ -20,7 +20,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Khởi tạo endpoint WebSocket chính cho toàn hệ thống
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:3001");
+                .setAllowedOrigins("http://localhost:5173",
+                 "http://localhost:3000", "http://localhost:3001",
+                "http://localhost");
                 // .withSockJS(); // Bỏ qua SockJS để dùng STOMP trực tiếp qua WebSockets chuẩn
     }
 

@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:14
+    container_name: smartagent-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-smartagent}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - smartagent-network
+
+  backend:
+    build: ./spring-server
+    container_name: smartagent-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME:-smartagent}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - GEMINI_KEY=${GEMINI_KEY}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - AGENT_EMAIL=${AGENT_EMAIL}
+      - FRONTEND_URL=http://localhost:80
+    depends_on:
+      - db
+    networks:
+      - smartagent-network
+
+  frontend:
+    build: ./client
+    container_name: smartagent-frontend
+    ports:
+      - "80:80"
+    networks:
+      - smartagent-network
+
+networks:
+  smartagent-network:
+    driver: bridge
+
+volumes:
+  pgdata:

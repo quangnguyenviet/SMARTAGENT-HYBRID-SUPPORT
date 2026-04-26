@@ -30,6 +30,11 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP với đầy đủ
 ### Fix Layout Admin Dashboard
 - **✅ `AdminDashboard.jsx`**: Đổi outer div từ `min-h-screen` → `h-screen overflow-hidden`. Grid container dùng `height: calc(100vh - 73px)` thay vì `flex-1` → 3 cột không còn bị kéo dài theo cột cao nhất.
 
+### Containerization (Docker)
+- **✅ Dockerfile**: Tạo Dockerfile cho cả `spring-server` và `client`.
+- **✅ docker-compose.yml**: Thiết lập orchestration cho toàn bộ hệ thống (DB, Backend, Frontend).
+- **✅ Biến môi trường**: Chuyển cấu hình sang `.env` để quản lý tập trung cho Docker.
+
 ## Các Quyết Định Quan Trọng
 - **Prefix `[CONTACT]`**: Dùng prefix có cấu trúc thay vì NLP để parse nhanh, chắc chắn, không phụ thuộc AI.
 - **Gửi email dù online hay offline**: Email luôn được gửi khi có lead — song song với STOMP realtime cho Admin online.

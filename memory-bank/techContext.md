@@ -59,8 +59,16 @@ Dự án đã chuyển từ chốt stack sang triển khai thực tế cho chat 
 - Cấu hình: `base-url: https://generativelanguage.googleapis.com`, `completions-path: /v1beta/openai/chat/completions`.
 
 ### 4. Database & Storage
-- **PostgreSQL**: Lưu trữ dữ liệu có cấu trúc (Thông tin khách hàng, Danh sách Lead, Lịch sử chat).
 - **Redis**: Lưu trữ "Trạng thái hội thoại" (Session state). Ví dụ: `conversation_123 -> {is_bot_active: true, current_score: 45}`. Giúp quá trình chuyển giao (Handover) diễn ra với độ trễ gần như bằng 0.
+
+### 5. Deployment (Docker)
+- Dự án đã được container hóa hoàn toàn để dễ dàng triển khai:
+  - **Dockerfile (Backend)**: Multi-stage build cho Spring Boot (Maven compile -> JRE runner).
+  - **Dockerfile (Frontend)**: Multi-stage build cho React (Node build -> Nginx serving).
+  - **Docker Compose**: Orchestration toàn bộ stack bao gồm:
+    - `db`: PostgreSQL 16.
+    - `backend`: Spring Boot app kết nối DB và Gemini API.
+    - `frontend`: React app (Vite) được serve qua Nginx.
 
 ## Ghi Chú Môi Trường
 - Có thao tác cài npm nhầm trong thư mục `spring-server`, tạo ra:

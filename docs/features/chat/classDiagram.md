@@ -11,7 +11,7 @@ classDiagram
         -UUID id
         -String customerId
         -String channel
-        -String status
+        -String status -- ACTIVE, COLLECTING_CONTACT, HANDED_OVER, CLOSED
         -Boolean isBotActive
         -Integer leadScore
         -Long assignedAgentId
@@ -25,7 +25,10 @@ classDiagram
         -UUID id
         -Conversation conversation
         -String intentSummary
-        -BigDecimal estimatedValue
+        -String customerName
+        -String phone
+        -String email
+        -LocalDateTime contactCollectedAt
         -String priority
     }
 
@@ -71,12 +74,40 @@ classDiagram
         -ChatService chatService
         -AiScoringClient aiScoringClient
         -PotentialLeadRepository potentialLeadRepository
+        -NotificationService notificationService
         +processUserMessage(UUID conversationId, String content) void
+        -handleContactInfoMessage(Conversation conv, String content)
+        -handleFreeTextContactMessage(Conversation conv, String content)
+        -requestContactInfo(UUID id, Conversation conv, AiAnalysisResult result)
+        -sendLeadEmail(PotentialLead lead, Conversation conv)
     }
 
     class AiScoringClient {
         <<Interface>>
         +analyzeMessage(String currentMessage, List~String~ history) AiAnalysisResult
+        +summarizeConversation(List~String~ history) String
+    }
+
+    class NotificationService {
+        <<Interface>>
+        +sendLeadNotification(LeadNotificationData data) void
+    }
+
+    class NotificationServiceImpl {
+        -JavaMailSender mailSender
+        -TemplateEngine templateEngine
+        +sendLeadNotification(LeadNotificationData data) void
+    }
+
+    class LeadNotificationData {
+        -String customerName
+        -String phone
+        -String email
+        -Integer leadScore
+        -String intentSummary
+        -String conversationSummary
+        -Long conversationId
+        -String conversationLink
     }
 
     %% Định nghĩa Controllers
@@ -94,25 +125,6 @@ classDiagram
         +handleIncomingMessage(MessagePayload payload) void
     }
 
-    class WebSocketConfig {
-        <<Configuration>>
-        +registerStompEndpoints(StompEndpointRegistry registry)
-        +configureMessageBroker(MessageBrokerRegistry registry)
-    }
-
-    %% Định nghĩa Client (Frontend)
-    class AdminClient {
-        <<React Frontend>>
-        +subscribeToAdminTopic()
-        +renderConversations()
-    }
-
-    class CustomerClient {
-        <<React Frontend>>
-        +sendMessage()
-        +receiveMessage()
-    }
-
     %% Thiết lập các mối quan hệ (Relationships)
     Conversation "1" *-- "*" Message : contains
     Conversation "1" -- "0..1" PotentialLead : has
@@ -127,14 +139,10 @@ classDiagram
     OrchestratorService --> ChatService : uses
     OrchestratorService --> AiScoringClient : uses
     OrchestratorService ..> PotentialLeadRepository : uses
+    OrchestratorService --> NotificationService : uses
     
-    ChatService ..> Conversation : manages
-    ChatService ..> Message : manages
-
-    CustomerClient ..> ChatController : HTTP REST
-    CustomerClient ..> ChatWebSocketController : STOMP/WS
-    AdminClient ..> ChatController : HTTP REST
-    AdminClient ..> ChatWebSocketController : STOMP/WS (subscribe)
+    NotificationServiceImpl ..|> NotificationService : implements
+    NotificationService ..> LeadNotificationData : uses
 ```
 
 ## Chú Thích Các Thành Phần

@@ -5,17 +5,19 @@ Tài liệu này mô tả chi tiết thiết kế kỹ thuật cho tính năng *
 ## 1. Mục tiêu
 - Đảm bảo việc chuyển giao từ AI sang Người thật diễn ra tức thì.
 - Cập nhật trạng thái hội thoại đồng bộ trên cả Dashboard Admin và ChatWindow của khách hàng.
-- Khóa/Mở khóa ô nhập liệu (Input field) dựa trên trạng thái kiểm soát.
+- **Tự động hóa**: Hệ thống tự động kích hoạt Handover ngay khi khách hàng cung cấp thông tin liên hệ thành công.
+- **Thông báo đa kênh**: Gửi email thông báo cho nhân viên kèm tóm tắt hội thoại khi Handover được kích hoạt.
 
 ## 2. Ghi chú Kỹ thuật
-- **API Endpoint**: `POST /api/conversations/{id}/takeover`
-- **Dữ liệu yêu cầu (Payload)**: `{"agentId": Long}`
-- **Logic Backend**:
-    - Chuyển `isBotActive` về `false` để `OrchestratorService` ngừng xử lý tin nhắn tự động.
+- **API Endpoint (Manual)**: `POST /api/conversations/{id}/takeover`
+- **Logic Tự động (Automated)**:
+    - Được xử lý tại `OrchestratorService` khi nhận message có prefix `[CONTACT]`.
+    - Chuyển `isBotActive` về `false`.
     - Cập nhật `status` thành `HANDED_OVER`.
-    - Gắn `agentId` để biết ai chịu trách nhiệm hội thoại này.
+    - Gọi `AiScoringClient.summarizeConversation()` để tạo đoạn tóm tắt.
+    - Gọi `NotificationService` để gửi email.
 - **Logic Frontend**:
-    - Lắng nghe sự kiện qua WebSocket. Khi `isBotActive` thay đổi, React sẽ re-render để mở khóa ô nhập liệu.
+    - Lắng nghe sự kiện qua WebSocket. Khi `isBotActive` thay đổi, React sẽ re-render để mở/khóa ô nhập liệu và hiển thị mini-form nếu cần.
 
 ## 3. Liên kết
 - [Biểu đồ Lớp (Class Diagram)](./classDiagram.md)

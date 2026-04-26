@@ -2,6 +2,7 @@ package com.example.spring_server.orchestrator.client;
 
 import com.example.spring_server.orchestrator.dto.AiAnalysisResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -14,6 +15,7 @@ import java.util.List;
  * Dùng rules cơ bản để phân tích chữ trong tin nhắn thay vì gọi API thực tế.
  */
 @Service
+@ConditionalOnProperty(name = "app.ai.use-mock", havingValue = "true", matchIfMissing = true)
 @Slf4j
 public class MockAiScoringClientImpl implements AiScoringClient {
 

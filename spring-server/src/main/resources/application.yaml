@@ -2,6 +2,15 @@ spring:
   application:
     name: spring-server
 
+  ai:
+    openai:
+      api-key: ${GEMINI_KEY}
+      base-url: https://generativelanguage.googleapis.com
+      chat:
+        completions-path: /v1beta/openai/chat/completions
+        options:
+          model: gemini-2.5-flash
+
   datasource:
     url: jdbc:postgresql://localhost:5432/${DB_NAME}
     username: ${DB_USER}
@@ -17,6 +26,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 # Springdoc OpenAPI Configuration
+# AI App Config
+app:
+  ai:
+    use-mock: false
+    business-context: "Chúng tôi là công ty outsourcing phần mềm chuyên nghiệp. Quy trình: 1. Hỏi nhu cầu -> 2. Tư vấn sơ bộ -> 3. Chuyển cho kỹ thuật báo giá chi tiết."
+
 springdoc:
   api-docs:
     path: /v3/api-docs                          # OpenAPI JSON endpoint

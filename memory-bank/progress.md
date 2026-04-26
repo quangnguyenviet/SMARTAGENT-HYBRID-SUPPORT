@@ -19,6 +19,11 @@
 - [x] Điều hướng bằng React Router (`/chat`, `/admin`) và cập nhật style tổng thể.
 - [x] Tạo commit tính năng mới: `09c1391` (admin dashboard + routed chat views).
 - [x] Bổ sung push realtime cho admin (STOMP WebSocket broker, loại bỏ hoàn toàn polling).
+- [x] Triển khai Orchestrator Module: AI Scoring (Mock), phân tích Intent/Sentiment, và Handover logic.
+- [x] Tích hợp AI thực tế: OpenAI (Hoàn thành triển khai và cấu hình).
+- [x] Triển khai tính năng Take Over (Giành quyền hỗ trợ) từ Admin Dashboard.
+- [x] Hoàn thiện luồng Admin Chat với giao diện cao cấp (Premium Indigo) cho khách hàng.
+- [x] Thiết kế và triển khai giao diện 3 cột Sales-Centric cho Admin Dashboard.
 
 ## Những Việc Đang Thực Hiện (Current Status)
 - [x] Chốt và áp dụng stack frontend: React + Tailwind + react-router-dom.
@@ -28,6 +33,7 @@
 - [x] Dọn các artifacts cài npm nhầm trong `spring-server` (`node_modules`, `package.json`, `package-lock.json`).
 - [x] Thiết kế/triển khai Orchestrator Module (AI integration, lead scoring, handover logic, Mock AI).
 - [x] Thiết kế và triển khai giao diện 3 cột Sales-Centric cho Admin Dashboard (hiển thị Lead Score, Bot Status, Intent).
+- [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
 - [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
 
 ## Những Việc Cần Làm Tiếp Theo (What's Left to Build)
@@ -44,5 +50,6 @@
   - [ ] Xây dựng hệ thống Routing / Handover Engine (hoàn thiện).
   - [x] Xây dựng giao diện Dashboard cho Agent (Bản Mock 3 cột hiện đại).
 - **Kiểm Thử (Testing)**:
-  - Kiểm thử độ mượt mà khi chuyển giao giữa Bot và Người.
-  - Đánh giá tốc độ phản hồi của AI Sales Assist.
+  - [x] Kiểm thử độ mượt mà khi chuyển giao giữa Bot và Người (Take Over flow).
+  - [x] Kiểm thử luồng tin nhắn thời gian thực đa chiều (Customer <-> Bot <-> Admin).
+  - [ ] Đánh giá tốc độ phản hồi của AI Sales Assist thực tế.

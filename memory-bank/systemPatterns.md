@@ -23,11 +23,10 @@ Hệ thống SmartAgent được thiết kế theo hướng **Modular Monolith**
 ### 4. Sales-Centric Dashboard & AI Sales Assist
 - **Nhiệm vụ**: Giao diện tập trung dành cho nhân viên bán hàng.
 - **Thiết kế hiện tại**:
-	- Dashboard admin đã có danh sách hội thoại + khung lịch sử chat chi tiết.
-	- Cập nhật dữ liệu bằng polling định kỳ (giải pháp trung gian để đảm bảo thấy tin mới mà không reload).
+	- Dashboard admin 3 cột: Smart Inbox - Workspace - AI Insights.
+	- Cập nhật dữ liệu hoàn toàn qua **STOMP WebSocket Realtime** (topic `/topic/admin/conversations`).
 	- Điều hướng tách biệt theo route: `/admin` cho vận hành nội bộ, `/chat` cho giao diện khách.
-- **Hướng nâng cấp**:
-	- Chuyển dần từ polling sang push realtime đầy đủ cho dashboard qua kênh WebSocket admin.
+	- Tính năng **Take Over** để giành quyền từ AI.
 
 ## Quy Trình Vận Hành (Workflow Pattern)
 1. **Giai đoạn 1 (Smart Screening)**: Bot thu thập thông tin cơ bản.
@@ -37,6 +36,8 @@ Hệ thống SmartAgent được thiết kế theo hướng **Modular Monolith**
 
 ## Mẫu Triển Khai Hiện Tại (As-Is)
 1. Khách gửi tin từ màn `/chat`.
-2. Hệ thống lưu lịch sử qua REST + cập nhật realtime cho phiên đang mở bằng WebSocket.
-3. Màn `/admin` lấy danh sách hội thoại và lịch sử theo chu kỳ polling.
-4. Admin chọn hội thoại để xem full timeline trước khi can thiệp thủ công.
+2. Hệ thống lưu lịch sử qua REST + cập nhật realtime qua STOMP Topic `/topic/chat/{id}`.
+3. Màn `/admin` nhận cập nhật inbox tức thì qua topic `/topic/admin/conversations`.
+4. Orchestrator phân tích tin nhắn user để chấm điểm và phát hiện nhu cầu handover.
+5. Admin thực hiện Take Over -> `isBotActive = false` -> Hệ thống mở khóa ô nhập liệu cho Admin.
+6. Admin chat trực tiếp -> Khách nhận tin nhắn nhãn "Nhân viên hỗ trợ" màu Indigo.

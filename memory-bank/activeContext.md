@@ -14,8 +14,8 @@ Dự án **SmartAgent Hybrid Support** đã chuyển từ giai đoạn định h
   - WebSocket xử lý real-time message events.
   - API admin lấy danh sách hội thoại (`GET /api/conversations`).
 - **✅ Frontend chat/admin** (đã implement):
-  - `ChatWindow` cho khách hàng.
-  - `AdminDashboard` xem danh sách hội thoại và lịch sử chat (Đã nâng cấp lên giao diện 3 cột chuẩn Sales-Centric).
+  - `ChatWindow` cho khách hàng (Hỗ trợ hiển thị tin nhắn Agent màu Indigo cao cấp).
+  - `AdminDashboard` xem danh sách hội thoại và lịch sử chat (Giao diện 3 cột Sales-Centric, hỗ trợ Take Over).
   - Điều hướng bằng `react-router-dom` (`/admin`, `/chat`).
 - **✅ Push realtime cho admin dashboard & Customer Chat** (đã implement):
   - Thay thế toàn bộ Raw WebSocket bằng kiến trúc STOMP Message Broker.
@@ -25,6 +25,15 @@ Dự án **SmartAgent Hybrid Support** đã chuyển từ giai đoạn định h
   - Triển khai `OrchestratorService` và mock `AiScoringClient`.
   - Tự động bắt tin nhắn, chấm điểm (Lead Score), xác định Intent.
   - Tự động thay đổi trạng thái Bot/Handover dựa trên rule.
+- **✅ Admin Chat & Handover Flow**:
+  - API `takeover` để nhân viên giành quyền hỗ trợ.
+  - Luồng tin nhắn Admin qua WebSocket topic `/topic/chat/{id}`.
+  - Cơ chế bypass Orchestrator khi Agent đang kiểm soát.
+- **✅ Tích hợp AI Thực tế (OpenAI)**:
+  - Cấu hình Spring AI với `spring-ai-starter-model-openai`.
+  - Triển khai `OpenAiScoringClientImpl` với System Prompt tối ưu cho Outsourcing Phần mềm.
+  - Hỗ trợ Structured Output để nhận kết quả phân tích Sentiment/Intent dạng JSON.
+  - Cơ chế chuyển đổi linh hoạt giữa Mock và Real AI qua `app.ai.use-mock`.
 
 ## Các Quyết Định Mới Nhất
 - Giữ kiến trúc Hybrid (AI + Human), nhưng ưu tiên hoàn thiện luồng chat người-thật trước khi tích hợp bot.

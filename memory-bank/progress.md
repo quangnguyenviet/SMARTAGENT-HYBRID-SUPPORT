@@ -28,7 +28,7 @@
 ## Những Việc Đang Thực Hiện (Current Status)
 - [x] Thiết kế/triển khai Orchestrator Module (AI integration, lead scoring, handover logic, Real AI).
 - [x] Chuyển đổi toàn bộ kiến trúc sang STOMP Message Broker (Admin/Client realtime).
-- [x] Tích hợp AI thực tế (OpenAI bridge cho Gemini 1.5 Flash).
+- [x] Tích hợp AI thực tế (OpenAI bridge cho Gemini).
 - [/] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
 
 ## Những Việc Cần Làm Tiếp Tiếp Theo (What's Left to Build)

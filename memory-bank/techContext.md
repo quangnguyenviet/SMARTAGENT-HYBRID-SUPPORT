@@ -11,7 +11,7 @@ Dự án đã chuyển từ chốt stack sang triển khai thực tế cho chat 
 
 ### 1. Frontend (Giao diện Quản trị & Chat)
 - **Framework**: React 19 + Vite.
-- **Routing**: react-router-dom (`/admin`, `/chat`).
+- **Routing**: react-router-dom — `/` (Landing Page), `/admin` (Admin Dashboard), `/chat` (Chat standalone).
 - **Styling**: Tailwind CSS v4 (qua `@tailwindcss/postcss`).
 - **Realtime hiện tại**:
   - Sử dụng **STOMP Message Broker** (Pub/Sub) qua WebSocket cho cả khách hàng và admin.
@@ -42,14 +42,16 @@ Dự án đã chuyển từ chốt stack sang triển khai thực tế cho chat 
   - `ObjectMapper` đăng ký `JavaTimeModule` để serialize `LocalDateTime`.
   - Chuẩn hóa parser `WebSocketEventType` theo cả enum name và wire value.
 - **Database Schema** (định nghĩa trong Flyway):
-  - `conversations`: Lưu thông tin hội thoại (id, customer_id, channel, status, lead_score, is_bot_active).
-  - `messages`: Lưu các tin nhắn (id, conversation_id, sender, sender_type, content, timestamp).
-  - `potential_leads`: Lưu dữ liệu tiềm năng (id, conversation_id, intent_summary, estimated_value).
+  - `conversations`: id, customer_id, channel, status, lead_score, is_bot_active, assigned_agent_id.
+  - `messages`: id, conversation_id, sender, sender_type, content, timestamp.
+  - `potential_leads`: id, conversation_id, intent_summary, priority. (Cột `estimated_value` đã bị xóa theo yêu cầu).
 
 ### 3. AI Service (Google Gemini)
 - Hệ thống tích hợp trực tiếp với **Gemini 1.5 Flash** thông qua Spring AI.
-- Sử dụng **Prompt Engineering** chuyên sâu cho lĩnh vực phần mềm (3 giai đoạn: Sàng lọc -> Phát hiện tín hiệu -> Chuyển giao).
-- Ép kiểu dữ liệu trả về dạng JSON chuẩn thông qua cơ chế Structured Output của Spring AI.
+- Sử dụng **Prompt Engineering** chuyên sâu 3 giai đoạn (Sàng lọc → Tín hiệu → Chuyển giao).
+- Quy tắc chấm điểm: +10 (yêu cầu chi tiết), +20 (hỏi giá/thời gian), +30 (để lại liên hệ), +50 (khiếu nại).
+- Structured Output: AI trả về `AiAnalysisResult` JSON gồm `reply`, `intent`, `sentiment`, `scoreIncrement`.
+- Cấu hình: `base-url: https://generativelanguage.googleapis.com`, `completions-path: /v1beta/openai/chat/completions`.
 
 ### 4. Database & Storage
 - **PostgreSQL**: Lưu trữ dữ liệu có cấu trúc (Thông tin khách hàng, Danh sách Lead, Lịch sử chat).

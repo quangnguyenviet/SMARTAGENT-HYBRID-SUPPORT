@@ -1,49 +1,64 @@
 # Theo Dõi Tiến Độ (Progress)
 
 ## Trạng Thái Tổng Quan
-- **Giai đoạn (Phase)**: Triển khai MVP Chat (sau Phase 0)
-- **Tình trạng**: Đã có backend chat hoạt động và frontend admin/customer để test thực tế.
+- **Giai đoạn (Phase)**: MVP hoàn chỉnh — Landing Page + AI Chat + Admin Dashboard
+- **Tình trạng**: Hệ thống hoạt động end-to-end. Khách chat → AI phân tích → Admin nhận điểm realtime → Take Over.
 
 ## Những Việc Đã Hoàn Thành (What Works)
-- [x] Lên ý tưởng dự án và xác định các tính năng cốt lõi (Quy định tại `README.md`).
-- [x] Định nghĩa mục tiêu trọng tâm: Tối ưu chốt đơn (Sales-ready) qua AI Handover.
-- [x] Thiết lập cấu trúc Memory Bank với thông tin ngữ cảnh đầy đủ:
-  - `projectbrief.md`
-  - `productContext.md`
-  - `systemPatterns.md`
-  - `techContext.md`
-  - `activeContext.md`
-- [x] Hoàn thành Chat Module backend (REST + WebSocket + Flyway schema).
-- [x] Ổn định tích hợp realtime chat (CORS, sự kiện WS, serialization thời gian).
-- [x] Hoàn thành giao diện khách hàng (`ChatWindow`) và giao diện admin (`AdminDashboard`).
-- [x] Điều hướng bằng React Router (`/chat`, `/admin`) và cập nhật style tổng thể.
-- [x] Tạo commit tính năng mới: `09c1391` (admin dashboard + routed chat views).
-- [x] Bổ sung push realtime cho admin (STOMP WebSocket broker, loại bỏ hoàn toàn polling).
-- [x] Triển khai Orchestrator Module: AI Scoring (Mock), phân tích Intent/Sentiment, và Handover logic.
-- [x] Tích hợp AI thực tế: OpenAI (Hoàn thành triển khai và cấu hình).
-- [x] Triển khai tính năng Take Over (Giành quyền hỗ trợ) từ Admin Dashboard.
-- [x] Hoàn thiện luồng Admin Chat với giao diện cao cấp (Premium Indigo) cho khách hàng.
-- [x] Thiết kế và triển khai giao diện 3 cột Sales-Centric cho Admin Dashboard.
+
+### Nền Tảng & Kiến Trúc
+- [x] Lên ý tưởng, xác định tính năng cốt lõi.
+- [x] Thiết lập Memory Bank đầy đủ.
+- [x] Kiến trúc STOMP Message Broker (Pub/Sub) thay thế hoàn toàn Raw WebSocket/Polling.
+
+### Backend Chat Module
+- [x] Conversation/Message entities + Flyway schema.
+- [x] REST API: tạo hội thoại, gửi tin, lấy lịch sử, lấy tất cả hội thoại (Admin).
+- [x] WebSocket STOMP: broadcast tin nhắn realtime đến Customer và Admin.
+- [x] API `takeover`: nhân viên giành quyền từ Bot.
+- [x] Conversation Entity có quan hệ `@OneToOne` với `PotentialLead`.
+- [x] `ConversationDTO` bao gồm `leadScore`, `intentSummary`, `sentiment`.
+- [x] `ChatServiceImpl.entityToDTO()` map dữ liệu từ `PotentialLead` vào DTO.
+
+### Orchestrator & AI Module
+- [x] `OrchestratorService`: Tự động phân tích tin nhắn, chấm điểm, kích hoạt Handover.
+- [x] Tích hợp AI thực tế: `gemini-1.5-flash` qua OpenAI bridge (`spring-ai-starter-model-openai`).
+- [x] AI Prompt 3 giai đoạn (Sàng lọc → Tín hiệu → Handover) với điểm nhạy bén (+10/+20/+30/+50).
+- [x] Structured Output: Kết quả AI trả về dạng `AiAnalysisResult` JSON.
+- [x] Sự kiện `LEAD_SCORE_UPDATED` mang đầy đủ `ConversationDTO` để cập nhật Dashboard Admin realtime.
+- [x] Cơ chế chuyển đổi Mock/Real AI qua `app.ai.use-mock`.
+
+### Frontend Khách Hàng
+- [x] `LandingPage.jsx`: Trang chủ giới thiệu công ty (Glassmorphism, Gradient).
+- [x] `ChatWidget.jsx`: Nút chat bong bóng nổi góc phải, popup khi nhấn.
+- [x] `ChatWindow.jsx`: Luôn hiển thị UI (không chặn bởi màn Loading). Kết nối WebSocket ổn định do không bị unmount.
+- [x] `App.jsx`: `/` → Landing Page, Chat Widget toàn cục, `/admin` → Admin Dashboard.
+
+### Frontend Quản Trị
+- [x] `AdminDashboard.jsx`: Giao diện 3 cột (Smart Inbox | Workspace | AI Insights) với Header riêng.
+- [x] Cột AI Insights hiển thị `intentSummary` thật từ AI Backend.
+- [x] Cập nhật điểm 🔥 và trạng thái hội thoại realtime qua STOMP.
+- [x] Tính năng Take Over: `isBotActive = false`, mở khóa ô nhập liệu Admin.
 
 ## Những Việc Đang Thực Hiện (Current Status)
-- [x] Thiết kế/triển khai Orchestrator Module (AI integration, lead scoring, handover logic, Real AI).
-- [x] Chuyển đổi toàn bộ kiến trúc sang STOMP Message Broker (Admin/Client realtime).
-- [x] Tích hợp AI thực tế (OpenAI bridge cho Gemini).
-- [/] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
+- [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
 
-## Những Việc Cần Làm Tiếp Tiếp Theo (What's Left to Build)
-- **Thiết Kế (Design)**:
-  - [ ] Thiết kế chi tiết Security Module (Xác thực Agent/Admin).
-  - [ ] Vẽ các sơ đồ kiến trúc (Architecture Diagram, Sequence Diagram).
-- **Phát Triển (Development)**:
-  - [ ] Triển khai JWT Authentication và phân quyền Endpoint.
-  - [ ] Lưu trữ Intent Summary và Estimated Value vào DB (Table `potential_leads`).
-  - [ ] Implement Security Module classes.
-  - [ ] Tích hợp kết nối kênh Chat (vd: Zalo, Facebook Messenger, Website).
-  - [ ] Xây dựng mô-đun AI Intent & Sentiment Analysis (thực tế).
-  - [ ] Xây dựng hệ thống Routing / Handover Engine (hoàn thiện).
-  - [x] Xây dựng giao diện Dashboard cho Agent (Bản Mock 3 cột hiện đại).
-- **Kiểm Thử (Testing)**:
-  - [x] Kiểm thử độ mượt mà khi chuyển giao giữa Bot và Người (Take Over flow).
-  - [x] Kiểm thử luồng tin nhắn thời gian thực đa chiều (Customer <-> Bot <-> Admin).
-  - [ ] Đánh giá tốc độ phản hồi của AI Sales Assist thực tế.
+## Những Việc Cần Làm Tiếp Theo (What's Left to Build)
+
+### Phát Triển (Development)
+- [ ] **Security Module**: JWT Authentication, phân quyền Admin/Agent endpoint.
+- [ ] **Flyway migration**: Xóa cột `estimated_value` khỏi bảng `potential_leads` (cleanup DB).
+- [ ] **Đa kênh**: Tích hợp Zalo, Facebook Messenger vào hệ thống routing.
+- [ ] **Thống kê**: Dashboard tổng hợp số liệu (Lead mới/ngày, tỷ lệ chuyển đổi, v.v.).
+
+### Kiểm Thử (Testing)
+- [ ] Test end-to-end: Khách chat → AI → Admin nhận realtime → Take Over → Admin chat.
+- [ ] Đánh giá tốc độ phản hồi AI thực tế.
+- [ ] Test stress: Nhiều hội thoại đồng thời.
+
+## Commits Quan Trọng
+| Commit | Mô tả |
+|--------|--------|
+| `c97c860` | feat: real-time lead scoring, landing page with chat widget, fix JSX errors |
+| `33f6b64` | feat: optimize AI prompt for complaint handling |
+| `fed93a7` | feat: integrate real AI via OpenAI bridge |

@@ -25,12 +25,31 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  # Gmail SMTP - cần bật 2FA và tạo App Password trong tài khoản Google
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}    # App Password (không phải password thường)
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false
+
 # Springdoc OpenAPI Configuration
 # AI App Config
 app:
   ai:
     use-mock: false
     business-context: "Chúng tôi là công ty outsourcing phần mềm chuyên nghiệp. Quy trình: 1. Hỏi nhu cầu -> 2. Tư vấn sơ bộ -> 3. Chuyển cho kỹ thuật báo giá chi tiết."
+
+  notification:
+    agent-email: ${AGENT_EMAIL}         # Email nhân viên nhận thông báo
+    frontend-url: ${FRONTEND_URL:http://localhost:5173}  # URL Admin Dashboard
 
 springdoc:
   api-docs:

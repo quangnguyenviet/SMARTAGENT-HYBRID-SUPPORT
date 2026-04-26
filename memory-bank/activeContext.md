@@ -1,47 +1,41 @@
 # Ngữ Cảnh Hiện Tại (Active Context)
 
 ## Trạng Thái Dự Án
-Dự án **SmartAgent Hybrid Support** đã chuyển từ giai đoạn định hình tài liệu sang giai đoạn triển khai MVP cho Chat nội bộ.
+Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP với giao diện Landing Page + Chat Widget cho khách hàng và hệ thống AI Lead Scoring hoạt động thực tế.
 
-- Backend Chat Module đã hoạt động ổn định với REST + WebSocket.
-- Frontend đã có 2 luồng chính bằng React Router: màn khách hàng (`/chat`) và màn admin (`/admin`).
-- Đã có commit triển khai UI/admin mới: `09c1391`.
+- Backend Chat Module hoạt động ổn định với REST + WebSocket (STOMP).
+- Frontend: Landing Page làm trang chủ, Chat Widget nổi ở góc phải, Admin Dashboard 3 cột riêng biệt.
+- AI Scoring thực tế (Gemini qua OpenAI bridge) đang cộng điểm và phân tích Intent.
+- Commit mới nhất: `c97c860`.
 
-## Công Việc Đang Thực Hiện
-- **✅ Chat module backend** (đã implement):
-  - Conversation/Message entities + repositories.
-  - REST API cho tạo hội thoại, gửi tin nhắn, lấy lịch sử.
-  - WebSocket xử lý real-time message events.
-  - API admin lấy danh sách hội thoại (`GET /api/conversations`).
-- **✅ Frontend chat/admin** (đã implement):
-  - `ChatWindow` cho khách hàng (Hỗ trợ hiển thị tin nhắn Agent màu Indigo cao cấp).
-  - `AdminDashboard` xem danh sách hội thoại và lịch sử chat (Giao diện 3 cột Sales-Centric, hỗ trợ Take Over).
-  - Điều hướng bằng `react-router-dom` (`/admin`, `/chat`).
-- **✅ Push realtime cho admin dashboard & Customer Chat** (đã implement):
-  - Thay thế toàn bộ Raw WebSocket bằng kiến trúc STOMP Message Broker.
-  - Tích hợp `@stomp/stompjs` trên cả `ChatWindow` (khách) và `AdminDashboard` (quản trị).
-  - Loại bỏ hoàn toàn cơ chế polling, chuyển sang pub/sub realtime (cập nhật list hội thoại, nảy tin nhắn ngay lập tức không cần reload).
-- **✅ Orchestrator Module (MVP)**:
-  - Triển khai `OrchestratorService` và mock `AiScoringClient`.
-  - Tự động bắt tin nhắn, chấm điểm (Lead Score), xác định Intent.
-  - Tự động thay đổi trạng thái Bot/Handover dựa trên rule.
-- **✅ Admin Chat & Handover Flow**:
-  - API `takeover` để nhân viên giành quyền hỗ trợ.
-  - Luồng tin nhắn Admin qua WebSocket topic `/topic/chat/{id}`.
-  - Cơ chế bypass Orchestrator khi Agent đang kiểm soát.
-- **✅ Tích hợp AI Thực tế (OpenAI)**:
-  - Cấu hình Spring AI với `spring-ai-starter-model-openai`.
-  - Triển khai `OpenAiScoringClientImpl` với System Prompt tối ưu cho Outsourcing Phần mềm.
-  - Hỗ trợ Structured Output để nhận kết quả phân tích Sentiment/Intent dạng JSON.
-  - Cơ chế chuyển đổi linh hoạt giữa Mock và Real AI qua `app.ai.use-mock`.
+## Công Việc Đã Hoàn Thành Trong Phiên Vừa Rồi
 
-## Các Quyết Định Mới Nhất
-- Giữ kiến trúc Hybrid (AI + Human), nhưng ưu tiên hoàn thiện luồng chat người-thật trước khi tích hợp bot.
-- Tích hợp **STOMP Message Broker** thay vì Raw WebSocket để dễ dàng mở rộng và phân luồng topic (Pub/Sub) cho tính năng chat realtime ở quy mô lớn.
-- Dùng React Router để tách rõ màn vận hành nội bộ (`/admin`) và màn chat khách (`/chat`).
-- Loại bỏ mô hình polling cho dashboard admin, thay bằng luồng WebSocket STOMP hoàn chỉnh.
+### Giao Diện Khách Hàng (Frontend)
+- **✅ Landing Page** (`LandingPage.jsx`): Trang giới thiệu công ty với thiết kế Glassmorphism/Gradient cao cấp.
+- **✅ Chat Widget** (`ChatWidget.jsx`): Nút chat bong bóng nổi góc phải, khi nhấn mở popup chat. Component `ChatWindow` được giữ mounted liên tục để kết nối không bị reset.
+- **✅ ChatWindow.jsx refactor**: Khôi phục toàn bộ logic kết nối bị mất. Loại bỏ màn hình "Connecting..." chặn toàn bộ giao diện. Ô nhập liệu luôn hiển thị ngay.
+- **✅ App.jsx**: Route `/` dẫn đến Landing Page, Chat Widget gắn toàn cục trên tất cả các trang.
+
+### Giao Diện Quản Trị (Admin)
+- **✅ AdminDashboard.jsx**: Thêm Header riêng cho trang Admin (sau khi tách khỏi header chung). Cột AI Insights hiển thị dữ liệu thật từ AI thay vì Mock.
+- **✅ `getConversationInsights()`**: Ưu tiên `intentSummary` thực từ Backend, chỉ fallback về logic suy luận khi thiếu dữ liệu.
+
+### Backend (Spring Boot)
+- **✅ Lead Scoring thực tế**: Sửa lỗi sự kiện `LEAD_SCORE_UPDATED` không mang dữ liệu hội thoại. Admin Dashboard giờ nhận được điểm mới ngay lập tức qua WebSocket.
+- **✅ AI Prompt nâng cấp**: Cộng điểm linh hoạt hơn (+10 mỗi yêu cầu cụ thể, +20 hỏi giá, +30 thông tin liên hệ, +50 khiếu nại).
+- **✅ Conversation Entity**: Thêm quan hệ `@OneToOne` với `PotentialLead` để map dữ liệu AI vào DTO.
+- **✅ ConversationDTO**: Bổ sung trường `intentSummary` và `sentiment`.
+- **✅ ChatServiceImpl**: Cập nhật `entityToDTO()` để điền dữ liệu từ `PotentialLead`.
+- **✅ Xóa `estimatedValue`**: Loại bỏ hoàn toàn trường này khỏi Entity, DTO, AI Result và UI theo yêu cầu người dùng.
+- **✅ Fix compile lỗi**: `chatService.getConversation().orElse(null)` thay thế phương thức không tồn tại.
+
+## Các Quyết Định Quan Trọng
+- **Chat Widget không re-mount**: Dùng CSS `hidden/flex` thay vì render có điều kiện `{isOpen && <ChatWindow/>}` để giữ kết nối WebSocket ổn định.
+- **Không dùng màn hình Loading chặn toàn bộ UI**: `ChatWindow` luôn hiển thị giao diện, trạng thái kết nối chỉ là chấm nhỏ ở header.
+- **Loại bỏ `estimatedValue`**: Theo yêu cầu người dùng, trường này không còn được phân tích hay hiển thị.
+- **Gemini model**: Sử dụng `gemini-1.5-flash` (đã sửa lỗi gõ nhầm `2.5`).
 
 ## Bước Tiếp Theo
-3. **✅ Bắt đầu Orchestrator Module** (đã hoàn thành bản thiết kế và mock).
-4. Thiết kế Security Module (JWT, role-based access).
-5. Bổ sung test tích hợp cho flow chat end-to-end.
+1. **Viết Flyway migration** để xóa cột `estimated_value` khỏi bảng `potential_leads` trong DB (tùy chọn, hiện không gây lỗi).
+2. **Thiết kế Security Module** (JWT, phân quyền Admin/Agent).
+3. **Test tích hợp** toàn bộ luồng: Khách chat → AI chấm điểm → Admin nhận điểm realtime → Take Over → Admin chat.

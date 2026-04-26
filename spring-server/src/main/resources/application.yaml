@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: spring-server
+
+  ai:
+    openai:
+      api-key: ${GEMINI_KEY}
+      base-url: https://generativelanguage.googleapis.com
+      chat:
+        completions-path: /v1beta/openai/chat/completions
+        options:
+          model: gemini-2.5-flash
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none   # create | create-drop | update | validate | none
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Gmail SMTP - cần bật 2FA và tạo App Password trong tài khoản Google
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}    # App Password (không phải password thường)
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false
+
+# Springdoc OpenAPI Configuration
+# AI App Config
+app:
+  ai:
+    use-mock: false
+    business-context: "Chúng tôi là công ty outsourcing phần mềm chuyên nghiệp. Quy trình: 1. Hỏi nhu cầu -> 2. Tư vấn sơ bộ -> 3. Chuyển cho kỹ thuật báo giá chi tiết."
+
+  notification:
+    agent-email: ${AGENT_EMAIL}         # Email nhân viên nhận thông báo
+    frontend-url: ${FRONTEND_URL:http://localhost:5173}  # URL Admin Dashboard
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs                          # OpenAPI JSON endpoint
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html                      # Swagger UI path
+    tagsSorter: alpha                           # Sort tags alphabetically
+    operationsSorter: alpha                     # Sort operations alphabetically
+    displayOperationId: true                    # Show operation IDs
+    filter: true                                # Enable search/filter
+    show-common-extensions: true
+  cache:
+    disabled: true                              # Refresh on every reload (dev mode)

@@ -205,6 +205,7 @@ public class ChatServiceImpl implements ChatService {
                 .status(entity.getStatus())
                 .isBotActive(entity.getIsBotActive())
                 .leadScore(entity.getLeadScore())
+                .intentSummary(entity.getPotentialLead() != null ? entity.getPotentialLead().getIntentSummary() : null)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .lastMessageTime(entity.getMessages().isEmpty() ? 

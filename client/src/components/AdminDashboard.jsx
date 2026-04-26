@@ -15,36 +15,26 @@ function getStatusClass(status) {
   return 'bg-cyan-400/15 text-cyan-300 ring-1 ring-cyan-400/30';
 }
 
-function getMockInsights(conversation) {
+function getConversationInsights(conversation) {
   if (!conversation) return null;
+  
   const score = conversation.leadScore || 0;
   const isHandedOver = conversation.status === 'HANDED_OVER' || !conversation.isBotActive;
   
-  if (isHandedOver || score >= 50) {
-    return {
-      intent: 'Cần gặp nhân viên / Khiếu nại',
-      sentiment: 'Căng thẳng 😡',
-      estimatedValue: 'Cao',
-      color: 'text-rose-400',
-      suggestions: ['Xin lỗi khách hàng', 'Xin số điện thoại', 'Kiểm tra đơn hàng']
-    };
-  } else if (score >= 15) {
-    return {
-      intent: 'Hỏi giá / Mua hàng',
-      sentiment: 'Tích cực 😊',
-      estimatedValue: '5,000,000 VND',
-      color: 'text-emerald-400',
-      suggestions: ['Gửi bảng giá', 'Tư vấn gói Premium', 'Xin thông tin liên hệ']
-    };
-  } else {
-    return {
-      intent: 'Tìm hiểu chung',
-      sentiment: 'Trung lập 😐',
-      estimatedValue: 'Chưa xác định',
-      color: 'text-cyan-400',
-      suggestions: ['Gửi lời chào', 'Hỏi nhu cầu cụ thể', 'Gửi link website']
-    };
-  }
+  // Ưu tiên dữ liệu thật từ AI Backend
+  const intent = conversation.intentSummary || (isHandedOver ? 'Cần hỗ trợ trực tiếp' : 'Đang tìm hiểu');
+  const sentiment = conversation.sentiment || (score >= 30 ? 'Tích cực 😊' : 'Trung lập 😐');
+  
+  let color = 'text-cyan-400';
+  if (isHandedOver || score >= 50) color = 'text-rose-400';
+  else if (score >= 15) color = 'text-emerald-400';
+
+  return {
+    intent,
+    sentiment,
+    color,
+    suggestions: isHandedOver ? ['Xin lỗi khách hàng', 'Hỏi số điện thoại'] : ['Tư vấn tính năng', 'Gửi báo giá']
+  };
 }
 
 export default function AdminDashboard() {
@@ -63,7 +53,7 @@ export default function AdminDashboard() {
     [conversations, selectedConversationId]
   );
 
-  const insights = useMemo(() => getMockInsights(selectedConversation), [selectedConversation]);
+  const insights = useMemo(() => getConversationInsights(selectedConversation), [selectedConversation]);
 
   useEffect(() => {
     loadConversations();
@@ -195,227 +185,236 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="mx-auto grid min-h-[calc(100vh-73px)] lg:h-[calc(100vh-73px)] max-w-[1600px] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[340px_1fr_320px] lg:px-6">
-      
-      {/* CỘT 1: SMART INBOX */}
-      <aside className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
-        <div className="border-b border-white/10 px-5 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Smart Inbox</p>
-              <h2 className="text-lg font-semibold text-white">Khách Hàng</h2>
-            </div>
-            <button
-              onClick={() => loadConversations(true)}
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/10"
-            >
-              Làm mới
-            </button>
+    <div className="flex flex-col min-h-screen">
+      {/* Header riêng cho Admin */}
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/80">SmartAgent Admin</p>
+            <h1 className="text-xl font-semibold text-white">Hybrid Support Console</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+            <span className="text-sm font-medium text-emerald-400">Hệ thống sẵn sàng</span>
           </div>
         </div>
+      </header>
 
-        <div className="flex-1 overflow-y-auto p-3">
-          {loadingConversations ? (
-            <div className="px-4 py-8 text-center text-slate-400">Đang tải...</div>
-          ) : conversations.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-slate-400">
-              Chưa có hội thoại nào.
+      <div className="mx-auto grid flex-1 w-full max-w-[1600px] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[340px_1fr_320px] lg:px-6 overflow-hidden">
+        
+        {/* CỘT 1: SMART INBOX */}
+        <aside className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+          <div className="border-b border-white/10 px-5 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Smart Inbox</p>
+                <h2 className="text-lg font-semibold text-white">Khách Hàng</h2>
+              </div>
+              <button
+                onClick={() => loadConversations(true)}
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/10"
+              >
+                Làm mới
+              </button>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {conversations.map((conversation) => {
-                const isSelected = conversation.id === selectedConversationId;
-                const score = conversation.leadScore || 0;
-                const botActive = conversation.isBotActive !== false;
+          </div>
 
-                return (
-                  <button
-                    key={conversation.id}
-                    onClick={() => setSelectedConversationId(conversation.id)}
-                    className={`w-full rounded-2xl border p-4 text-left transition ${
-                      isSelected
-                        ? 'border-cyan-400/40 bg-cyan-400/10 shadow-lg shadow-cyan-950/20'
-                        : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-white">Khách hàng #{conversation.customerId}</span>
-                        <div className="mt-1 flex items-center gap-2">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${botActive ? 'bg-blue-500/20 text-blue-300' : 'bg-rose-500/20 text-rose-300 border border-rose-500/50 animate-pulse'}`}>
-                            {botActive ? '🤖 Bot Auto' : '👩‍💼 Cần Chăm Sóc'}
+          <div className="flex-1 overflow-y-auto p-3">
+            {loadingConversations ? (
+              <div className="px-4 py-8 text-center text-slate-400">Đang tải...</div>
+            ) : conversations.length === 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-slate-400">
+                Chưa có hội thoại nào.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {conversations.map((conversation) => {
+                  const isSelected = conversation.id === selectedConversationId;
+                  const score = conversation.leadScore || 0;
+                  const botActive = conversation.isBotActive !== false;
+
+                  return (
+                    <button
+                      key={conversation.id}
+                      onClick={() => setSelectedConversationId(conversation.id)}
+                      className={`w-full rounded-2xl border p-4 text-left transition ${
+                        isSelected
+                          ? 'border-cyan-400/40 bg-cyan-400/10 shadow-lg shadow-cyan-950/20'
+                          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-white">Khách hàng #{conversation.customerId}</span>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${botActive ? 'bg-blue-500/20 text-blue-300' : 'bg-rose-500/20 text-rose-300 border border-rose-500/50 animate-pulse'}`}>
+                              {botActive ? '🤖 Bot Auto' : '👩‍💼 Cần Chăm Sóc'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Lửa thể hiện độ "Hot" của Lead */}
+                        <div className="flex flex-col items-end">
+                          <span className={`text-lg font-bold flex items-center gap-1 ${score >= 50 ? 'text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : score >= 15 ? 'text-amber-500' : 'text-slate-500'}`}>
+                            {score} <span className="text-sm">🔥</span>
                           </span>
                         </div>
                       </div>
-                      
-                      {/* Lửa thể hiện độ "Hot" của Lead */}
-                      <div className="flex flex-col items-end">
-                        <span className={`text-lg font-bold flex items-center gap-1 ${score >= 50 ? 'text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : score >= 15 ? 'text-amber-500' : 'text-slate-500'}`}>
-                          {score} <span className="text-sm">🔥</span>
-                        </span>
+
+                      <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-2 text-[11px] text-slate-400">
+                        <span className="truncate">{conversation.channel || 'Web'}</span>
+                        <span>{formatDate(conversation.updatedAt)}</span>
                       </div>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-2 text-[11px] text-slate-400">
-                      <span className="truncate">{conversation.channel || 'Web'}</span>
-                      <span>{formatDate(conversation.updatedAt)}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* CỘT 2: KHÔNG GIAN CHAT (ACTIVE WORKSPACE) */}
-      <section className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 bg-slate-900/50">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Workspace</p>
-            <h2 className="text-lg font-semibold text-white">
-              {selectedConversation ? `Hội thoại #${selectedConversation.id}` : 'Chưa chọn hội thoại'}
-            </h2>
-          </div>
-          
-          {/* Nút TAKE OVER Khổng lồ */}
-          {selectedConversation && selectedConversation.isBotActive !== false && (
-            <button 
-              onClick={handleTakeOver}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-4 py-2 font-bold text-white shadow-lg shadow-rose-500/30 transition hover:scale-105 hover:shadow-rose-500/50"
-            >
-              <span>⚡</span> TAKE OVER
-            </button>
-          )}
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-900 to-cyan-950/20">
-          {!selectedConversation ? (
-            <div className="flex h-full items-center justify-center text-slate-500">
-              Chọn một khách hàng bên trái để bắt đầu.
-            </div>
-          ) : loadingMessages ? (
-            <div className="flex h-full items-center justify-center text-slate-500">Đang tải tin nhắn...</div>
-          ) : (
-            <>
-              {messages.map((message) => {
-                const isUser = String(message.senderType || '').toLowerCase() === 'user';
-                const isBot = String(message.senderType || '').toLowerCase() === 'bot';
-
-                return (
-                  <div key={message.id} className={`flex ${isUser ? 'justify-start' : 'justify-end'}`}>
-                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-lg ${
-                      isUser 
-                        ? 'bg-slate-800 border border-white/10 text-slate-200 rounded-tl-none' 
-                        : isBot 
-                          ? 'bg-cyan-950/50 border border-cyan-500/30 text-cyan-50 rounded-tr-none'
-                          : 'bg-indigo-600 border border-indigo-400 text-white rounded-tr-none' // Nhân viên
-                    }`}>
-                      <div className="mb-1 flex items-center justify-between gap-4 text-[10px] opacity-70">
-                        <span className="font-bold uppercase tracking-wider text-cyan-300">
-                          {isBot ? '🤖 AI Assistant' : message.sender || 'Customer'}
-                        </span>
-                        <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
-                      </div>
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </>
-          )}
-        </div>
-
-        {/* Khung nhập liệu */}
-        {selectedConversation && (
-          <div className="border-t border-white/10 bg-slate-900/50 p-4">
-            <form onSubmit={handleSendMessage} className="relative flex items-center">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={selectedConversation.isBotActive !== false ? "Vui lòng bấm 'TAKE OVER' để nhắn tin..." : "Nhập tin nhắn hỗ trợ khách hàng..."}
-                disabled={selectedConversation.isBotActive !== false}
-                className="w-full rounded-2xl border border-white/10 bg-slate-800/50 py-3 pl-4 pr-12 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <button
-                type="submit"
-                disabled={!newMessage.trim() || selectedConversation.isBotActive !== false}
-                className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500 text-white transition hover:bg-cyan-400 disabled:opacity-50"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-              </button>
-            </form>
-          </div>
-        )}
-      </section>
-
-      {/* CỘT 3: AI INSIGHTS (ORCHESTRATOR) */}
-      <aside className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
-        <div className="border-b border-white/10 px-5 py-4 bg-gradient-to-r from-slate-900 to-indigo-950/30">
-          <p className="text-[10px] uppercase tracking-[0.28em] text-indigo-300/80">AI Orchestrator</p>
-          <h2 className="text-lg font-semibold text-white">Mật Vụ Phân Tích</h2>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-5">
-          {!selectedConversation ? (
-            <div className="text-center text-sm text-slate-500 mt-10">
-              Đang chờ dữ liệu AI...
-            </div>
-          ) : (
-            <div className="space-y-6">
-              
-              {/* Intent & Value */}
-              <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Hồ Sơ Tiềm Năng</h3>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-[10px] uppercase text-slate-500">Ý Định (Intent)</p>
-                    <p className={`text-sm font-semibold ${insights?.color}`}>{insights?.intent}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase text-slate-500">Giá Trị Ước Tính</p>
-                    <p className="text-lg font-bold text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]">
-                      {insights?.estimatedValue}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sentiment */}
-              <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Phân Tích Cảm Xúc</h3>
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl">{insights?.sentiment.split(' ')[1]}</span>
-                  <span className={`text-sm font-semibold ${insights?.color}`}>
-                    {insights?.sentiment.split(' ')[0]}
-                  </span>
-                </div>
-              </div>
-
-              {/* Quick Replies */}
-              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-4 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-cyan-300">🤖 AI Gợi Ý Trả Lời</h3>
-                <div className="space-y-2">
-                  {insights?.suggestions.map((suggestion, idx) => (
-                    <button 
-                      key={idx}
-                      className="w-full rounded-xl border border-cyan-500/30 bg-slate-900/50 px-3 py-2 text-left text-xs text-cyan-100 transition hover:bg-cyan-500/20 hover:border-cyan-400"
-                    >
-                      "{suggestion}"
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
+            )}
+          </div>
+        </aside>
+
+        {/* CỘT 2: KHÔNG GIAN CHAT (ACTIVE WORKSPACE) */}
+        <section className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 bg-slate-900/50">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Workspace</p>
+              <h2 className="text-lg font-semibold text-white">
+                {selectedConversation ? `Hội thoại #${selectedConversation.id}` : 'Chưa chọn hội thoại'}
+              </h2>
+            </div>
+            
+            {/* Nút TAKE OVER Khổng lồ */}
+            {selectedConversation && selectedConversation.isBotActive !== false && (
+              <button 
+                onClick={handleTakeOver}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-4 py-2 font-bold text-white shadow-lg shadow-rose-500/30 transition hover:scale-105 hover:shadow-rose-500/50"
+              >
+                <span>⚡</span> TAKE OVER
+              </button>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-900 to-cyan-950/20">
+            {!selectedConversation ? (
+              <div className="flex h-full items-center justify-center text-slate-500">
+                Chọn một khách hàng bên trái để bắt đầu.
+              </div>
+            ) : loadingMessages ? (
+              <div className="flex h-full items-center justify-center text-slate-500">Đang tải tin nhắn...</div>
+            ) : (
+              <>
+                {messages.map((message) => {
+                  const isUser = String(message.senderType || '').toLowerCase() === 'user';
+                  const isBot = String(message.senderType || '').toLowerCase() === 'bot';
+
+                  return (
+                    <div key={message.id} className={`flex ${isUser ? 'justify-start' : 'justify-end'}`}>
+                      <div className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-lg ${
+                        isUser 
+                          ? 'bg-slate-800 border border-white/10 text-slate-200 rounded-tl-none' 
+                          : isBot 
+                            ? 'bg-cyan-950/50 border border-cyan-500/30 text-cyan-50 rounded-tr-none'
+                            : 'bg-indigo-600 border border-indigo-400 text-white rounded-tr-none' // Nhân viên
+                      }`}>
+                        <div className="mb-1 flex items-center justify-between gap-4 text-[10px] opacity-70">
+                          <span className="font-bold uppercase tracking-wider text-cyan-300">
+                            {isBot ? '🤖 AI Assistant' : message.sender || 'Customer'}
+                          </span>
+                          <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </>
+            )}
+          </div>
+
+          {/* Khung nhập liệu */}
+          {selectedConversation && (
+            <div className="border-t border-white/10 bg-slate-900/50 p-4">
+              <form onSubmit={handleSendMessage} className="relative flex items-center">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder={selectedConversation.isBotActive !== false ? "Vui lòng bấm 'TAKE OVER' để nhắn tin..." : "Nhập tin nhắn hỗ trợ khách hàng..."}
+                  disabled={selectedConversation.isBotActive !== false}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-800/50 py-3 pl-4 pr-12 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <button
+                  type="submit"
+                  disabled={!newMessage.trim() || selectedConversation.isBotActive !== false}
+                  className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500 text-white transition hover:bg-cyan-400 disabled:opacity-50"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </button>
+              </form>
             </div>
           )}
-        </div>
-      </aside>
+        </section>
 
+        {/* CỘT 3: AI INSIGHTS (ORCHESTRATOR) */}
+        <aside className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+          <div className="border-b border-white/10 px-5 py-4 bg-gradient-to-r from-slate-900 to-indigo-950/30">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-indigo-300/80">AI Orchestrator</p>
+            <h2 className="text-lg font-semibold text-white">Mật Vụ Phân Tích</h2>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-5">
+            {!selectedConversation ? (
+              <div className="text-center text-sm text-slate-500 mt-10">
+                Đang chờ dữ liệu AI...
+              </div>
+            ) : (
+              <div className="space-y-6">
+                
+                {/* Intent & Value */}
+                <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                  <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Hồ Sơ Tiềm Năng</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-[10px] uppercase text-slate-500">Ý Định (Intent)</p>
+                      <p className={`text-sm font-semibold ${insights?.color}`}>{insights?.intent}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sentiment */}
+                <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                  <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Phân Tích Cảm Xúc</h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl">{insights?.sentiment.split(' ')[1]}</span>
+                    <span className={`text-sm font-semibold ${insights?.color}`}>
+                      {insights?.sentiment.split(' ')[0]}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quick Replies */}
+                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-4 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
+                  <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-cyan-300">🤖 AI Gợi Ý Trả Lời</h3>
+                  <div className="space-y-2">
+                    {insights?.suggestions.map((suggestion, idx) => (
+                      <button 
+                        key={idx}
+                        className="w-full rounded-xl border border-cyan-500/30 bg-slate-900/50 px-3 py-2 text-left text-xs text-cyan-100 transition hover:bg-cyan-500/20 hover:border-cyan-400"
+                      >
+                        "{suggestion}"
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

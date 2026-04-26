@@ -16,6 +16,9 @@ Dự án đã chuyển từ chốt stack sang triển khai thực tế cho chat 
 - **Realtime hiện tại**:
   - Sử dụng **STOMP Message Broker** (Pub/Sub) qua WebSocket cho cả khách hàng và admin.
   - Admin Dashboard nhận tin nhắn và cập nhật danh sách hội thoại ngay lập tức mà không cần reload.
+- **Giao diện Khách hàng**:
+  - Landing Page hiện đại giới thiệu công ty.
+  - Chat Widget (Floating Button) tích hợp popup chat.
 
 ### 2. Backend (Spring Boot - Linh hồn điều phối)
 - Thiết kế theo hướng **Modular Monolith** (Tạm thời gom các luồng xử lý vào một ứng dụng Spring Boot duy nhất nhưng chia package rõ ràng để sau này dễ tách thành Microservices).

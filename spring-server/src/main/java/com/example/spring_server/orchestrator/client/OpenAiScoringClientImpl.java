@@ -42,9 +42,11 @@ public class OpenAiScoringClientImpl implements AiScoringClient {
                     2. Xác định Intent (pricing, duration, handover, technical, complaint, general_inquiry).
                     3. Đánh giá cảm xúc (positive, negative, neutral).
                     4. Chấm điểm tiềm năng (scoreIncrement):
-                       - +20: Khách hỏi mua hàng hoặc hỏi giá.
+                       - +10: Mỗi khi khách hàng cung cấp thêm một yêu cầu cụ thể (tính năng, số lượng nhân sự, quy trình).
+                       - +20: Khách hỏi về giá cả, chi phí hoặc thời gian triển khai.
                        - +50: Khách báo lỗi sản phẩm hoặc khiếu nại (Cần xử lý gấp).
-                    5. Ước tính giá trị (estimatedValue).
+                       - +30: Khách để lại thông tin liên hệ (SĐT, Email) hoặc yêu cầu gặp nhân viên.
+                    5. Ước tính giá trị (estimatedValue): Dựa trên độ phức tạp của phần mềm khách yêu cầu (Ví dụ: 20-50tr cho app đơn giản, >100tr cho hệ thống phức tạp).
                     
                     YÊU CẦU TRẢ LỜI (REPLY):
                     - Lịch sự, cầu thị, chuyên nghiệp.

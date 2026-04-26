@@ -43,7 +43,7 @@ public class MockAiScoringClientImpl implements AiScoringClient {
             result.setIntent("pricing");
             result.setScoreIncrement(15);
             result.setSentiment("positive");
-            result.setEstimatedValue(new BigDecimal("5000000")); // Vd: 5 triệu
+//            result.setEstimatedValue(new BigDecimal("5000000")); // Vd: 5 triệu
             result.setReply("Sản phẩm bên em có nhiều mức giá tùy theo gói cấu hình. Anh/chị có ngân sách khoảng bao nhiêu ạ để em tư vấn cho phù hợp?");
         }
         // Rule 3: Khách hàng không hài lòng

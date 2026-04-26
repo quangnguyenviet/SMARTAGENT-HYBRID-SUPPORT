@@ -32,9 +32,6 @@ public class PotentialLead {
     @Column(name = "intent_summary", columnDefinition = "TEXT")
     private String intentSummary;
 
-    @Column(name = "estimated_value", precision = 15, scale = 2)
-    private BigDecimal estimatedValue;
-
     @Column(length = 10)
     private String priority; // e.g., HIGH, MEDIUM, LOW
 }

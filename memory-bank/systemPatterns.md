@@ -48,9 +48,10 @@ Hệ thống SmartAgent được thiết kế theo hướng **Modular Monolith**
 4. **Giai đoạn 4 (Conversion & Feedback)**: Nhân viên chốt đơn, trả quyền cho Bot (Release control). Bot tiếp tục thu thập địa chỉ, thanh toán và đánh giá.
 
 ## Mẫu Triển Khai Hiện Tại (As-Is)
-1. Khách gửi tin từ màn `/chat`.
-2. Hệ thống lưu lịch sử qua REST + cập nhật realtime qua STOMP Topic `/topic/chat/{id}`.
-3. Màn `/admin` nhận cập nhật inbox tức thì qua topic `/topic/admin/conversations`.
-4. Orchestrator phân tích tin nhắn user để chấm điểm và phát hiện nhu cầu handover.
-5. Admin thực hiện Take Over -> `isBotActive = false` -> Hệ thống mở khóa ô nhập liệu cho Admin.
-6. Admin chat trực tiếp -> Khách nhận tin nhắn nhãn "Nhân viên hỗ trợ" màu Indigo.
+1. Khách truy cập Landing Page (`/`).
+2. Nhấn vào Chat Widget ở góc dưới bên phải để mở cửa sổ chat popup.
+3. Hệ thống lưu lịch sử qua REST + cập nhật realtime qua STOMP Topic `/topic/chat/{id}`.
+4. Màn `/admin` (với Header riêng) nhận cập nhật inbox tức thì.
+5. Orchestrator phân tích tin nhắn user để chấm điểm và phát hiện nhu cầu handover.
+6. Admin thực hiện Take Over -> `isBotActive = false` -> Hệ thống mở khóa ô nhập liệu cho Admin.
+7. Admin chat trực tiếp -> Khách nhận tin nhắn trong widget popup.

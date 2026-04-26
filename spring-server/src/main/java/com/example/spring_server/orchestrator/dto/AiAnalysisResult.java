@@ -32,8 +32,4 @@ public class AiAnalysisResult {
      */
     private int scoreIncrement;
     
-    /**
-     * Dự đoán giá trị hợp đồng/đơn hàng (nếu có nhắc đến giá cả/số lượng)
-     */
-    private BigDecimal estimatedValue;
 }

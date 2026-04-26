@@ -79,6 +79,9 @@ public class Conversation {
      */
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Message> messages = new ArrayList<>();
+
+    @OneToOne(mappedBy = "conversation", cascade = CascadeType.ALL)
+    private PotentialLead potentialLead;
     
     /**
      * JPA lifecycle callback - auto-set createdAt & updatedAt

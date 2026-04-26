@@ -72,9 +72,6 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         if (analysis.getIntent() != null && !analysis.getIntent().equals("neutral")) {
             lead.setIntentSummary(analysis.getIntent());
         }
-        if (analysis.getEstimatedValue() != null) {
-            lead.setEstimatedValue(analysis.getEstimatedValue());
-        }
         
         // Lưu dữ liệu
         potentialLeadRepository.save(lead);
@@ -84,8 +81,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         messagingTemplate.convertAndSend("/topic/admin/conversations", 
                 AdminDashboardEvent.builder()
                     .eventType(AdminDashboardEvent.EventType.LEAD_SCORE_UPDATED)
-                    // You might need to add leadScore to ConversationDTO or create a specific DTO
-                    // For now we'll just send the event to trigger a refresh or use CONVERSATION_UPDATED
+                    .conversation(chatService.getConversation(conversationId).orElse(null))
                     .build());
 
         // Kiểm tra điều kiện Handover (Chuyển giao cho người thật)

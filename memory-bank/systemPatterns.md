@@ -4,20 +4,33 @@
 Hệ thống SmartAgent được thiết kế theo hướng **Modular Monolith** kết hợp với **External AI Service** để đơn giản hóa giai đoạn đầu nhưng vẫn đảm bảo tính tách biệt. Các Component chính bao gồm:
 
 ### 1. Spring Boot Monolith (Core Backend)
-Ứng dụng Spring Boot duy nhất sẽ đóng vai trò trung tâm xử lý, được chia thành các module nội bộ:
-- **Chat Module**: Đảm nhận việc giữ kết nối WebSocket (Stomp.js/SockJS) với client (khách hàng và nhân viên), lưu trữ dữ liệu vào PostgreSQL.
-- **Orchestrator Module**: Đóng vai trò điều phối trung tâm. Nhận tin nhắn từ Chat Module và gọi sang external AI Service qua REST API (OpenFeign/RestTemplate) để xử lý NLP.
-- **Security Module**: Quản lý xác thực và phân quyền bằng JWT + Spring Security.
+Ứng dụng Spring Boot duy nhất đóng vai trò trung tâm xử lý, được chia thành các module nội bộ:
+- **Chat Module**: Đảm nhận việc giữ kết nối WebSocket (STOMP) với client, lưu trữ lịch sử hội thoại.
+- **Orchestrator Module**: Điều phối tin nhắn, gọi AI Scorer và quản lý trạng thái Handover.
+- **Security Module**: Quản lý xác thực (Đang phát triển).
 
-### 2. AI/NLP Service (FastAPI - Python)
-- **Nhiệm vụ**: Tiếp nhận tin nhắn từ Orchestrator, xử lý ngôn ngữ tự nhiên để phân tích ý định (Intent), chấm điểm (Lead Score) và trích xuất thực thể.
-- **Cơ chế**: Sử dụng Prompt Engineering với LLM (Gemini 1.5/OpenAI) hoặc mô hình NLP cục bộ (PhởBERT) để trả về JSON (Score, Intent).
+### 2. Orchestrator Pattern (Kẻ điều phối)
+- **Service**: `OrchestratorServiceImpl` là trung tâm xử lý tin nhắn.
+- **Quy trình**:
+  1. Nhận tin nhắn từ `ChatService`.
+  2. Gửi sang `AiScoringClient` (OpenAI/Gemini Bridge) để phân tích.
+  3. Dựa trên kết quả (Intent, Lead Score), quyết định:
+     - GĐ 1: Bot tư vấn sơ bộ & sàng lọc.
+     - GĐ 2: Phát hiện tín hiệu mua hàng/hẹn gặp.
+     - GĐ 3: Kích hoạt Handover cho nhân viên.
+- **AI Consultation Strategy**: Sử dụng Prompt Engineering để thực hiện quy trình tư vấn chuyên sâu 3 giai đoạn thay vì chỉ trả lời đơn thuần.
 
-### 3. AI-Driven Handover & Session State (Redis)
+### 3. Real-time Pub/Sub Pattern (STOMP)
+- **Broker**: Spring STOMP In-memory.
+- **Topics**: 
+  - `/topic/messages/{convId}`: Luồng tin nhắn realtime.
+  - `/topic/conversations`: Cập nhật inbox cho Admin Dashboard.
+
+### 4. AI-Driven Handover & Session State
 - **Nhiệm vụ**: Quản lý việc chuyển giao quyền kiểm soát hội thoại giữa Bot và Human.
 - **Quy tắc**: Dựa trên kết quả từ AI Service, cập nhật trạng thái session trong **Redis** (ví dụ: `is_bot_active: false`, bật cờ ưu tiên). Redis giúp đồng bộ trạng thái cực nhanh giữa các node.
 
-### 3. Cổng Tương Tác Kép (Dual Interface Gateway)
+### 5. Cổng Tương Tác Kép (Dual Interface Gateway)
 - Xử lý việc routing tin nhắn từ khách hàng đến Chatbot hoặc Nhân viên và ngược lại mà khách hàng không nhận ra sự ngắt quãng.
 
 ### 4. Sales-Centric Dashboard & AI Sales Assist

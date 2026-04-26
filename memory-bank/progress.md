@@ -26,24 +26,18 @@
 - [x] Thiết kế và triển khai giao diện 3 cột Sales-Centric cho Admin Dashboard.
 
 ## Những Việc Đang Thực Hiện (Current Status)
-- [x] Chốt và áp dụng stack frontend: React + Tailwind + react-router-dom.
-- [x] Mở rộng API admin lấy danh sách hội thoại và lịch sử để giám sát.
-- [x] Triển khai cơ chế auto-refresh (polling) cho admin dashboard (Sau đó đã nâng cấp thay thế bằng luồng WebSocket STOMP Pub/Sub).
-- [x] **Đã hoàn thành**: Chuyển đổi toàn bộ kiến trúc sang STOMP Message Broker, admin nhận realtime push không cần polling.
-- [x] Dọn các artifacts cài npm nhầm trong `spring-server` (`node_modules`, `package.json`, `package-lock.json`).
-- [x] Thiết kế/triển khai Orchestrator Module (AI integration, lead scoring, handover logic, Mock AI).
-- [x] Thiết kế và triển khai giao diện 3 cột Sales-Centric cho Admin Dashboard (hiển thị Lead Score, Bot Status, Intent).
-- [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
-- [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
+- [x] Thiết kế/triển khai Orchestrator Module (AI integration, lead scoring, handover logic, Real AI).
+- [x] Chuyển đổi toàn bộ kiến trúc sang STOMP Message Broker (Admin/Client realtime).
+- [x] Tích hợp AI thực tế (OpenAI bridge cho Gemini 1.5 Flash).
+- [/] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
 
-## Những Việc Cần Làm Tiếp Theo (What's Left to Build)
+## Những Việc Cần Làm Tiếp Tiếp Theo (What's Left to Build)
 - **Thiết Kế (Design)**:
-  - [x] Thiết kế chi tiết Orchestrator Module (AI integration, lead scoring, handover logic).
-  - [x] Thiết kế Mockup/Wireframe và code giao diện 3 cột cho Sales-Centric Dashboard.
-  - [ ] Thiết kế chi tiết Security Module (JWT, authentication, authorization).
-  - [ ] Vẽ các sơ đồ kiến trúc (Architecture Diagram, Sequence Diagram, Data Flow)
+  - [ ] Thiết kế chi tiết Security Module (Xác thực Agent/Admin).
+  - [ ] Vẽ các sơ đồ kiến trúc (Architecture Diagram, Sequence Diagram).
 - **Phát Triển (Development)**:
-  - [x] Implement Orchestrator Module classes (AiScoringClient, OrchestratorService, PotentialLead).
+  - [ ] Triển khai JWT Authentication và phân quyền Endpoint.
+  - [ ] Lưu trữ Intent Summary và Estimated Value vào DB (Table `potential_leads`).
   - [ ] Implement Security Module classes.
   - [ ] Tích hợp kết nối kênh Chat (vd: Zalo, Facebook Messenger, Website).
   - [ ] Xây dựng mô-đun AI Intent & Sentiment Analysis (thực tế).

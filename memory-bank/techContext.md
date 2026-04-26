@@ -14,8 +14,8 @@ Dự án đã chuyển từ chốt stack sang triển khai thực tế cho chat 
 - **Routing**: react-router-dom (`/admin`, `/chat`).
 - **Styling**: Tailwind CSS v4 (qua `@tailwindcss/postcss`).
 - **Realtime hiện tại**:
-  - Chat khách hàng: WebSocket + REST history.
-  - Dashboard admin: polling định kỳ để cập nhật danh sách hội thoại và lịch sử đang mở.
+  - Sử dụng **STOMP Message Broker** (Pub/Sub) qua WebSocket cho cả khách hàng và admin.
+  - Admin Dashboard nhận tin nhắn và cập nhật danh sách hội thoại ngay lập tức mà không cần reload.
 
 ### 2. Backend (Spring Boot - Linh hồn điều phối)
 - Thiết kế theo hướng **Modular Monolith** (Tạm thời gom các luồng xử lý vào một ứng dụng Spring Boot duy nhất nhưng chia package rõ ràng để sau này dễ tách thành Microservices).
@@ -23,30 +23,30 @@ Dự án đã chuyển từ chốt stack sang triển khai thực tế cho chat 
   - Build Tool: Maven
   - Migration: Flyway (quản lý schema versioning)
   - ORM: Spring Data JPA / Hibernate
-  - REST API: Spring Web MVC
-  - Real-time: Spring WebSocket
-- **Core Modules**: 
-  - *Chat Module*: Xử lý kết nối WebSocket, lưu trữ lịch sử hội thoại vào PostgreSQL.
-  - *Orchestrator Module*: Điều phối tin nhắn. Khi có tin nhắn mới, đẩy sang AI Service (bên ngoài) để "chấm điểm".
-  - *Security Module*: Spring Security & JWT (phân quyền giữa Agent/Nhân viên và Admin/Quản lý).
+  - Java 21, Spring Boot 3.5.x.
+  - **Spring AI**: Sử dụng `spring-ai-starter-model-openai` làm bridge để kết nối với Google Gemini API (tương thích chuẩn OpenAI).
+  - **Real-time**: Spring WebSocket + STOMP Message Broker.
+  - **Database**: PostgreSQL + Flyway cho migration.
+  - **API Doc**: SpringDoc OpenAPI (Swagger).
+  - *Orchestrator Module*: Điều phối tin nhắn. Khi có tin nhắn mới, đẩy sang AI thông qua `AiScoringClient` để phân tích Intent/Sentiment và chấm điểm.
+  - *Security Module*: Spring Security & JWT (Đang thiết kế).
 - **API đã có**:
   - Chat tạo hội thoại, gửi tin, lấy lịch sử hội thoại.
   - Admin lấy danh sách hội thoại: `GET /api/conversations`.
+  - API `takeover` để Agent giành quyền từ Bot.
 - **Các fix kỹ thuật đã áp dụng**:
   - CORS config cho frontend local.
   - `ObjectMapper` đăng ký `JavaTimeModule` để serialize `LocalDateTime`.
   - Chuẩn hóa parser `WebSocketEventType` theo cả enum name và wire value.
 - **Database Schema** (định nghĩa trong Flyway):
-  - `conversations`: Lưu thông tin hội thoại (id, customer_id, channel, status, created_at).
-  - `messages`: Lưu các tin nhắn (id, conversation_id, sender, content, timestamp).
-  - `leads`: Lưu dữ liệu Lead (id, customer_id, score, status, potential_revenue).
+  - `conversations`: Lưu thông tin hội thoại (id, customer_id, channel, status, lead_score, is_bot_active).
+  - `messages`: Lưu các tin nhắn (id, conversation_id, sender, sender_type, content, timestamp).
+  - `potential_leads`: Lưu dữ liệu tiềm năng (id, conversation_id, intent_summary, estimated_value).
 
-### 3. AI/NLP Service (Python - FastAPI)
-- Thay vì dùng Java cho NLP, hệ thống sử dụng FastAPI (Python) để tận dụng hệ sinh thái AI phong phú.
-- **Mô hình NLP**:
-  - *Option 1 (Nhanh & Mạnh)*: Gọi API của Gemini 1.5 Flash hoặc OpenAI. Viết Prompt tối ưu để trả về định dạng JSON (VD: `Intent: Potential, Score: 90`).
-  - *Option 2 (Tự chủ)*: Sử dụng thư viện PhởBERT hoặc VinAI/underthesea để phân tích cảm xúc và trích xuất từ khóa tiềm năng cục bộ (tiếng Việt).
-- **Communication**: Giao tiếp với Spring Boot qua REST API (sử dụng RestTemplate hoặc OpenFeign bên phía Spring).
+### 3. AI Service (Google Gemini)
+- Hệ thống tích hợp trực tiếp với **Gemini 1.5 Flash** thông qua Spring AI.
+- Sử dụng **Prompt Engineering** chuyên sâu cho lĩnh vực phần mềm (3 giai đoạn: Sàng lọc -> Phát hiện tín hiệu -> Chuyển giao).
+- Ép kiểu dữ liệu trả về dạng JSON chuẩn thông qua cơ chế Structured Output của Spring AI.
 
 ### 4. Database & Storage
 - **PostgreSQL**: Lưu trữ dữ liệu có cấu trúc (Thông tin khách hàng, Danh sách Lead, Lịch sử chat).

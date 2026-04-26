@@ -8,7 +8,9 @@ Tài liệu này mô tả tính năng cho phép Nhân viên hỗ trợ (Agent) g
 - Đảm bảo Bot không tự động trả lời đè lên tin nhắn của Admin.
 
 ## 2. Các thành phần tham gia
-- **Admin Dashboard**: Giao diện gửi tin nhắn, hiển thị lịch sử hội thoại.
+- **Admin Dashboard**: Giao diện 2 cột tối ưu:
+    - **Cột 1 (Smart Inbox)**: Danh sách hội thoại với Tabs lọc ("Cần Chăm Sóc", "Tất Cả").
+    - **Cột 2 (Chat Workspace)**: Khu vực chat trực tiếp và quản lý lịch sử.
 - **Backend (Spring Boot)**: Xử lý tiếp nhận tin nhắn từ Admin, lưu vào Database và chuyển tiếp tới Khách hàng qua WebSocket.
 - **WebSocket (STOMP)**: Kênh truyền tải tin nhắn thời gian thực.
 - **Customer Chat Window**: Giao diện nhận tin nhắn từ Admin.
@@ -16,8 +18,10 @@ Tài liệu này mô tả tính năng cho phép Nhân viên hỗ trợ (Agent) g
 ## 3. Ghi chú Kỹ thuật
 - **Topic gửi tin (Admin -> Server)**: `/app/chat.sendMessage` (qua WebSocket)
 - **Topic nhận tin (Server -> Customer)**: `/topic/chat/{conversationId}`
-- **Sender Type**: Tin nhắn từ Admin phải có `senderType = 'agent'`.
-- **Logic chặn Bot**: Khi `Conversation.isBotActive = false`, Orchestrator sẽ bỏ qua việc xử lý tin nhắn để tránh Bot trả lời tự động.
+- **Sender Type**: Tin nhắn từ Admin có `senderType = 'agent'`.
+- **Logic lọc Inbox**: 
+    - Tab "Cần Chăm Sóc" hiển thị các hội thoại có `isBotActive = false` hoặc trạng thái `HANDED_OVER`/`COLLECTING_CONTACT`.
+- **Logic chặn Bot**: Khi `Conversation.isBotActive = false`, Orchestrator sẽ bỏ qua việc xử lý tin nhắn để tránh Bot trả lời tự động khi nhân viên đang chat.
 
 ## 4. Liên kết
 - [Biểu đồ Lớp (Class Diagram)](./classDiagram.md)

@@ -34,21 +34,25 @@ Mục tiêu cốt lõi của tính năng này là đảm bảo luồng tin nhắ
 ### 2.1. Luồng tạo hội thoại và gửi tin (Khách hàng)
 - Khách hàng lần đầu truy cập sẽ gọi API tạo một Conversation ID mới.
 - Mọi tin nhắn khách hàng gửi đi sẽ được lưu vào hệ thống và được đẩy tiếp (forward) vào WebSocket của phòng chat cụ thể đó.
-- Ngay sau đó, tin nhắn được đánh chặn bởi **AI Orchestrator Module**. 
-  - Orchestrator sẽ gọi API phân tích (AiScoringClient) để lấy điểm Intent/Sentiment.
-  - Tự động lưu `PotentialLead` và cộng điểm `leadScore`.
-  - Nếu khách gõ các từ khóa nhạy cảm (như "nhân viên", "người thật") hoặc điểm số cao, Orchestrator sẽ tự động cập nhật trạng thái `HANDED_OVER`.
-  - Nếu không, Bot sẽ tự động lấy câu trả lời từ AI và phản hồi lại cho khách.
+- Ngay sau đó, tin nhắn được xử lý bởi **AI Orchestrator Module** với 3 kịch bản chính:
+  1. **Luồng AI tư vấn bình thường**: Bot sử dụng Gemini AI để phân tích tin nhắn và trả lời khách hàng. Hệ thống liên tục chấm điểm `leadScore`.
+  2. **Luồng Thu thập thông tin liên hệ (`COLLECTING_CONTACT`)**: Khi `leadScore` đạt mức cao (≥50) hoặc AI phát hiện nhu cầu mua hàng/khiếu nại, Bot sẽ gửi một yêu cầu đặc biệt (`collect_contact`) để kích hoạt **Mini Contact Form** ở phía khách hàng.
+  3. **Luồng Xử lý thông tin liên hệ (`[CONTACT]`)**: Khi khách hàng gửi thông tin từ form (có prefix `[CONTACT]`), Orchestrator sẽ:
+     - Trích xuất và lưu Tên, SĐT, Email vào `PotentialLead`.
+     - Chuyển trạng thái sang `HANDED_OVER` và tắt Bot (`isBotActive = false`).
+     - Gọi AI tóm tắt toàn bộ nội dung cuộc hội thoại.
+     - Kích hoạt **NotificationService** để gửi Email thông báo khẩn cấp cho nhân viên (bao gồm thông tin liên hệ và đoạn tóm tắt).
 
 ### 2.2. Luồng theo dõi thời gian thực (Admin)
 - Admin vào Dashboard sẽ thiết lập kết nối WebSocket với topic chung (`/topic/admin/conversations`).
-- Bất cứ khi nào Khách hàng có thao tác mới, thay vì Admin phải Refresh trang (Polling), backend tự động gửi một thông báo (Push Event Payload) cập nhật. Admin lập tức nhìn thấy tin nhắn nhảy lên đầu danh sách.
+- Bất cứ khi nào Khách hàng có thao tác mới, hệ thống tự động gửi Push Event.
+- **Tính năng Inbox Tabs**: Admin Dashboard tự động lọc các hội thoại vào tab "Cần Chăm Sóc" nếu trạng thái là `HANDED_OVER` hoặc `COLLECTING_CONTACT`.
 - *Xem thêm biểu đồ chi tiết: [Sequence Diagram - Admin Realtime Push](./sequence.md)*
 
 ### 2.3. Chuyển giao AI & Người thật (Handover)
-- Ở trạng thái ban đầu (`ACTIVE`), Bot (AI) sẽ tự động trả lời các câu hỏi thường gặp của khách thông qua `OrchestratorService`.
-- Khi điểm "tiềm năng" đạt mức cao (hoặc khách đang bức xúc/gõ từ khóa muốn gặp người thật), hệ thống tự động ngắt cờ `isBotActive = false` và cập nhật thành `HANDED_OVER`.
-- Admin nhận được Notification realtime. Lúc này, AI sẽ ngừng can thiệp, Admin sẽ nói chuyện trực tiếp với Khách hàng.
+- Luồng Handover giờ đây diễn ra tự động ngay sau khi khách hàng cung cấp thông tin liên hệ.
+- Admin nhận được Email thông báo ngay cả khi đang Offline, đảm bảo không bỏ lỡ khách hàng tiềm năng.
+- Nhân viên có thể nhấn vào link trong Email để mở trực tiếp hội thoại trên Dashboard và bắt đầu hỗ trợ.
 
 ---
 

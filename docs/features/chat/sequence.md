@@ -15,7 +15,8 @@ sequenceDiagram
     participant ChatService as ChatService
     participant OrchestratorService as OrchestratorService
     participant AiScoringClient as AiScoringClient
-    participant Repositories as Conversation/Message<br/>Repositories
+    participant Repositories as Conversation/Message/Lead<br/>Repositories
+    participant NotificationService as NotificationService
     participant SimpMessagingTemplate as SimpMessagingTemplate
     participant WSBroker as WebSocket Broker
 
@@ -27,39 +28,37 @@ sequenceDiagram
     AdminClient->>WSBroker: subscribeToAdminTopic()<br/>-> /topic/admin/conversations
     end
 
-    %% Giai đoạn 2: Khách hàng Tương tác
+    %% Giai đoạn 2: Khách hàng Tương tác & AI Xử lý
     rect rgb(0, 0, 0)
-    Note over CustomerClient, Repositories: 2. Khách hàng tạo hội thoại / gửi tin nhắn
+    Note over CustomerClient, Repositories: 2. Luồng tin nhắn & AI Orchestrator
     
-    %% Khách tạo hội thoại qua REST
-    CustomerClient->>ChatController: startConversation(Request dto) (REST HTTP)
-    ChatController->>ChatService: createConversation(customerId)
-    ChatService->>Repositories: save(Conversation)
-    Repositories-->>ChatService: Conversation Entity
-    ChatService-->>ChatController: return
-    ChatController-->>CustomerClient: ResponseEntity (OK)
-
-    %% Khách gửi tin nhắn qua WebSocket
-    CustomerClient->>ChatWebSocketController: sendMessage() -> handleIncomingMessage(payload)
+    CustomerClient->>ChatWebSocketController: sendMessage()
     ChatWebSocketController->>ChatService: saveMessage(dto)
     ChatService->>Repositories: save(Message)
-    Repositories-->>ChatService: Message Entity
-    ChatService-->>ChatWebSocketController: Broadcast user message
-
-    %% Orchestrator can thiệp
-    Note over ChatWebSocketController, AiScoringClient: Orchestrator đánh giá AI (Bất đồng bộ)
-    ChatWebSocketController->>OrchestratorService: processUserMessage()
-    OrchestratorService->>AiScoringClient: analyzeMessage(currentMsg, history)
-    AiScoringClient-->>OrchestratorService: AiAnalysisResult (intent, score, reply)
-    OrchestratorService->>Repositories: Update Lead Score & PotentialLead
     
-    alt If Intent == Handover or Score >= 50
-        OrchestratorService->>ChatService: updateConversationStatus(HANDED_OVER)
-        ChatService->>SimpMessagingTemplate: Broadcast LEAD_SCORE_UPDATED / HANDOVER_TRIGGERED
-    else If Status is still ACTIVE
-        OrchestratorService->>ChatService: sendMessage(botReply)
-        ChatService->>Repositories: save(Bot Message)
-        ChatService->>SimpMessagingTemplate: Broadcast bot message
+    ChatWebSocketController->>OrchestratorService: processUserMessage()
+    
+    alt Luồng thông tin liên hệ ([CONTACT] prefix)
+        OrchestratorService->>Repositories: Save Contact Info to PotentialLead
+        OrchestratorService->>ChatService: updateStatus(HANDED_OVER) & disableBot()
+        OrchestratorService->>AiScoringClient: summarizeConversation(history)
+        AiScoringClient-->>OrchestratorService: summary text
+        OrchestratorService->>NotificationService: sendLeadNotification(data + summary)
+        NotificationService-->>Admin (Email): Lead Alert Email
+        OrchestratorService->>ChatService: sendBotReply("Cảm ơn...")
+    else Luồng AI bình thường
+        OrchestratorService->>AiScoringClient: analyzeMessage(msg, history)
+        AiScoringClient-->>OrchestratorService: AiAnalysisResult
+        OrchestratorService->>Repositories: Update Lead Score
+        
+        alt Nếu Score >= 50 hoặc Intent == Handover
+            OrchestratorService->>ChatService: updateStatus(COLLECTING_CONTACT)
+            OrchestratorService->>ChatService: sendMessage(type="collect_contact")
+            ChatService->>WSBroker: push to /topic/chat/{id}
+            WSBroker->>CustomerClient: Hiển thị Mini Contact Form
+        else Bot trả lời bình thường
+            OrchestratorService->>ChatService: sendBotReply(reply)
+        end
     end
     end
     
@@ -68,9 +67,8 @@ sequenceDiagram
     Note over ChatService, AdminClient: 3. Đẩy sự kiện Realtime tới Admin Dashboard
     ChatService->>SimpMessagingTemplate: broadcastAdminEvent(EventPayload)
     SimpMessagingTemplate->>WSBroker: send to /topic/admin/conversations
-    Note right of WSBroker: Payload: EventType (CONVERSATION_UPDATED, NEW_MESSAGE)
-    WSBroker->>AdminClient: Broadcast Message (JSON Payload)
-    AdminClient->>AdminClient: renderConversations() (Update State & Re-render)
+    WSBroker->>AdminClient: Broadcast (LEAD_SCORE_UPDATED, etc.)
+    AdminClient->>AdminClient: Update Inbox State & Tabs
     end
 ```
 

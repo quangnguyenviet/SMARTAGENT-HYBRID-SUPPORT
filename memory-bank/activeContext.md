@@ -1,41 +1,44 @@
 # Ngữ Cảnh Hiện Tại (Active Context)
 
 ## Trạng Thái Dự Án
-Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP với giao diện Landing Page + Chat Widget cho khách hàng và hệ thống AI Lead Scoring hoạt động thực tế.
+Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP với đầy đủ tính năng: Landing Page, Chat Widget, AI Lead Scoring realtime, Admin Dashboard, Handover, và tính năng mới **Bot tự thu thập thông tin liên hệ + gửi email thông báo nhân viên**.
 
-- Backend Chat Module hoạt động ổn định với REST + WebSocket (STOMP).
-- Frontend: Landing Page làm trang chủ, Chat Widget nổi ở góc phải, Admin Dashboard 3 cột riêng biệt.
-- AI Scoring thực tế (Gemini qua OpenAI bridge) đang cộng điểm và phân tích Intent.
-- Commit mới nhất: `c97c860`.
+- Commit mới nhất: `78a2f71`.
+- Backend hoạt động ổn định với REST + WebSocket STOMP + Email Notification.
+- Admin Dashboard đã fix lỗi layout 3 cột bị kéo dài theo nội dung.
 
-## Công Việc Đã Hoàn Thành Trong Phiên Vừa Rồi
+## Công Việc Đã Hoàn Thành Trong Phiên Này
 
-### Giao Diện Khách Hàng (Frontend)
-- **✅ Landing Page** (`LandingPage.jsx`): Trang giới thiệu công ty với thiết kế Glassmorphism/Gradient cao cấp.
-- **✅ Chat Widget** (`ChatWidget.jsx`): Nút chat bong bóng nổi góc phải, khi nhấn mở popup chat. Component `ChatWindow` được giữ mounted liên tục để kết nối không bị reset.
-- **✅ ChatWindow.jsx refactor**: Khôi phục toàn bộ logic kết nối bị mất. Loại bỏ màn hình "Connecting..." chặn toàn bộ giao diện. Ô nhập liệu luôn hiển thị ngay.
-- **✅ App.jsx**: Route `/` dẫn đến Landing Page, Chat Widget gắn toàn cục trên tất cả các trang.
+### Tính Năng Mới: Bot Thu Thập Contact & Email Thông Báo
+- **✅ V2 Flyway Migration**: Thêm 4 cột vào `potential_leads`: `customer_name`, `phone`, `email`, `contact_collected_at`. Xóa `estimated_value`.
+- **✅ PotentialLead entity**: Bổ sung 4 field tương ứng (`customerName`, `phone`, `email`, `contactCollectedAt`).
+- **✅ Notification Module**: Tạo mới package `notification/` gồm:
+  - `NotificationService` (interface)
+  - `NotificationServiceImpl` — gửi email async qua Gmail SMTP + Thymeleaf
+  - `LeadNotificationData` DTO
+  - `lead_notification.html` — email template dark mode premium (Lead Score badge, info grid, AI intent, CTA button)
+- **✅ OrchestratorServiceImpl**: Refactor toàn bộ với 3 luồng xử lý:
+  1. Nhận tin nhắn `[CONTACT]` từ mini-form → parse, lưu DB, gửi email, handover
+  2. Text tự do trong trạng thái `COLLECTING_CONTACT` → regex parse SĐT/email
+  3. Luồng AI bình thường → khi score ≥ 50 hoặc intent = handover → yêu cầu contact
+- **✅ `COLLECTING_CONTACT` status**: Trạng thái mới giữa ACTIVE và HANDED_OVER.
+- **✅ `pom.xml`**: Thêm `spring-boot-starter-mail` và `spring-boot-starter-thymeleaf`.
+- **✅ `application.yaml`**: Thêm Gmail SMTP config (`spring.mail.*`) và `app.notification.*`.
+- **✅ `@EnableAsync`**: Thêm vào `SpringServerApplication` để `@Async` hoạt động.
+- **✅ `ChatWindow.jsx`**: Thêm mini contact form (Tên, SĐT, Email) hiển thị khi nhận `senderType = collect_contact` từ bot. Submit gửi message với prefix `[CONTACT]`.
 
-### Giao Diện Quản Trị (Admin)
-- **✅ AdminDashboard.jsx**: Thêm Header riêng cho trang Admin (sau khi tách khỏi header chung). Cột AI Insights hiển thị dữ liệu thật từ AI thay vì Mock.
-- **✅ `getConversationInsights()`**: Ưu tiên `intentSummary` thực từ Backend, chỉ fallback về logic suy luận khi thiếu dữ liệu.
-
-### Backend (Spring Boot)
-- **✅ Lead Scoring thực tế**: Sửa lỗi sự kiện `LEAD_SCORE_UPDATED` không mang dữ liệu hội thoại. Admin Dashboard giờ nhận được điểm mới ngay lập tức qua WebSocket.
-- **✅ AI Prompt nâng cấp**: Cộng điểm linh hoạt hơn (+10 mỗi yêu cầu cụ thể, +20 hỏi giá, +30 thông tin liên hệ, +50 khiếu nại).
-- **✅ Conversation Entity**: Thêm quan hệ `@OneToOne` với `PotentialLead` để map dữ liệu AI vào DTO.
-- **✅ ConversationDTO**: Bổ sung trường `intentSummary` và `sentiment`.
-- **✅ ChatServiceImpl**: Cập nhật `entityToDTO()` để điền dữ liệu từ `PotentialLead`.
-- **✅ Xóa `estimatedValue`**: Loại bỏ hoàn toàn trường này khỏi Entity, DTO, AI Result và UI theo yêu cầu người dùng.
-- **✅ Fix compile lỗi**: `chatService.getConversation().orElse(null)` thay thế phương thức không tồn tại.
+### Fix Layout Admin Dashboard
+- **✅ `AdminDashboard.jsx`**: Đổi outer div từ `min-h-screen` → `h-screen overflow-hidden`. Grid container dùng `height: calc(100vh - 73px)` thay vì `flex-1` → 3 cột không còn bị kéo dài theo cột cao nhất.
 
 ## Các Quyết Định Quan Trọng
-- **Chat Widget không re-mount**: Dùng CSS `hidden/flex` thay vì render có điều kiện `{isOpen && <ChatWindow/>}` để giữ kết nối WebSocket ổn định.
-- **Không dùng màn hình Loading chặn toàn bộ UI**: `ChatWindow` luôn hiển thị giao diện, trạng thái kết nối chỉ là chấm nhỏ ở header.
-- **Loại bỏ `estimatedValue`**: Theo yêu cầu người dùng, trường này không còn được phân tích hay hiển thị.
-- **Gemini model**: Sử dụng `gemini-1.5-flash` (đã sửa lỗi gõ nhầm `2.5`).
+- **Prefix `[CONTACT]`**: Dùng prefix có cấu trúc thay vì NLP để parse nhanh, chắc chắn, không phụ thuộc AI.
+- **Gửi email dù online hay offline**: Email luôn được gửi khi có lead — song song với STOMP realtime cho Admin online.
+- **Email chạy `@Async`**: Không block luồng chat chính, khách nhận phản hồi ngay lập tức.
+- **Gmail App Password**: Cần env var `MAIL_USERNAME`, `MAIL_PASSWORD`, `AGENT_EMAIL`.
+- **Admin layout fixed**: `h-screen` + `calc(100vh - 73px)` cho grid để 3 cột cuộn độc lập nhau.
 
 ## Bước Tiếp Theo
-1. **Viết Flyway migration** để xóa cột `estimated_value` khỏi bảng `potential_leads` trong DB (tùy chọn, hiện không gây lỗi).
-2. **Thiết kế Security Module** (JWT, phân quyền Admin/Agent).
-3. **Test tích hợp** toàn bộ luồng: Khách chat → AI chấm điểm → Admin nhận điểm realtime → Take Over → Admin chat.
+1. **Security Module**: JWT Authentication, phân quyền Admin/Agent endpoint.
+2. **Test E2E email**: Xác nhận Gmail App Password hoạt động, nhận email đúng format.
+3. **Nhiều nhân viên nhận mail**: Mở rộng `AGENT_EMAIL` thành danh sách nếu cần.
+4. **Flyway**: Đã có V2 migration, chạy lần đầu sẽ tự apply.

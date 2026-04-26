@@ -1,8 +1,8 @@
 # Theo Dõi Tiến Độ (Progress)
 
 ## Trạng Thái Tổng Quan
-- **Giai đoạn (Phase)**: MVP hoàn chỉnh — Landing Page + AI Chat + Admin Dashboard
-- **Tình trạng**: Hệ thống hoạt động end-to-end. Khách chat → AI phân tích → Admin nhận điểm realtime → Take Over.
+- **Giai đoạn (Phase)**: MVP hoàn chỉnh — Landing Page + AI Chat + Admin Dashboard + Email Notification
+- **Tình trạng**: Hệ thống hoạt động end-to-end. Khách chat → AI chấm điểm → Bot hỏi thao tác contact → Gửi email nhân viên → Admin Take Over.
 
 ## Những Việc Đã Hoàn Thành (What Works)
 
@@ -40,14 +40,33 @@
 - [x] Cập nhật điểm 🔥 và trạng thái hội thoại realtime qua STOMP.
 - [x] Tính năng Take Over: `isBotActive = false`, mở khóa ô nhập liệu Admin.
 
-## Những Việc Đang Thực Hiện (Current Status)
+### Notification Module (Mới)
+- [x] `NotificationService` interface.
+- [x] `NotificationServiceImpl` — gửi email HTML async qua Gmail SMTP.
+- [x] `LeadNotificationData` DTO.
+- [x] `lead_notification.html` — Thymeleaf email template dark mode premium.
+- [x] `pom.xml`: Thêm `spring-boot-starter-mail` + `spring-boot-starter-thymeleaf`.
+- [x] `@EnableAsync` đầu trong `SpringServerApplication`.
+- [x] Gmail SMTP config + `app.notification.*` trong `application.yaml`.
+
+### Bot Thu Thập Contact
+- [x] V2 Flyway migration: thêm `customer_name`, `phone`, `email`, `contact_collected_at` vào `potential_leads`. Xóa `estimated_value`.
+- [x] `PotentialLead` entity: bổ sung 4 field liên hệ.
+- [x] `OrchestratorServiceImpl`: refactor toàn bộ với 3 luồng xử lý (form contact, text tự do, AI bình thường). Trigger gửi email khi score ≥ 50.
+- [x] `COLLECTING_CONTACT` — trạng thái hội thoại mới giữa ACTIVE và HANDED_OVER.
+- [x] `ChatWindow.jsx`: mini contact form (Tên, SĐT, Email) hiển thị khi bot yêu cầu.
+
+### Fix Layout Admin
+- [x] `AdminDashboard.jsx`: 3 cột không còn bị kéo dài theo cột cao nhất (`h-screen` + `calc(100vh - 73px)`).
+
 - [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
 
 ## Những Việc Cần Làm Tiếp Theo (What's Left to Build)
 
 ### Phát Triển (Development)
 - [ ] **Security Module**: JWT Authentication, phân quyền Admin/Agent endpoint.
-- [ ] **Flyway migration**: Xóa cột `estimated_value` khỏi bảng `potential_leads` (cleanup DB).
+- [ ] **Test E2E email**: Xác nhận Gmail App Password, nhận email đúng format.
+- [ ] **Flyway V2**: Đã có sẵn, chạy lần đầu sẽ tự apply.
 - [ ] **Đa kênh**: Tích hợp Zalo, Facebook Messenger vào hệ thống routing.
 - [ ] **Thống kê**: Dashboard tổng hợp số liệu (Lead mới/ngày, tỷ lệ chuyển đổi, v.v.).
 
@@ -59,6 +78,7 @@
 ## Commits Quan Trọng
 | Commit | Mô tả |
 |--------|--------|
+| `78a2f71` | feat: bot auto-collect contact info & email notification to agent |
 | `c97c860` | feat: real-time lead scoring, landing page with chat widget, fix JSX errors |
 | `33f6b64` | feat: optimize AI prompt for complaint handling |
 | `fed93a7` | feat: integrate real AI via OpenAI bridge |

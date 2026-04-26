@@ -29,6 +29,7 @@ Dự án đã chuyển từ chốt stack sang triển khai thực tế cho chat 
   - Java 21, Spring Boot 3.5.x.
   - **Spring AI**: Sử dụng `spring-ai-starter-model-openai` làm bridge để kết nối với Google Gemini API (tương thích chuẩn OpenAI).
   - **Real-time**: Spring WebSocket + STOMP Message Broker.
+  - **Email**: `spring-boot-starter-mail` (JavaMailSender) + `spring-boot-starter-thymeleaf` (HTML template).
   - **Database**: PostgreSQL + Flyway cho migration.
   - **API Doc**: SpringDoc OpenAPI (Swagger).
   - *Orchestrator Module*: Điều phối tin nhắn. Khi có tin nhắn mới, đẩy sang AI thông qua `AiScoringClient` để phân tích Intent/Sentiment và chấm điểm.
@@ -42,9 +43,13 @@ Dự án đã chuyển từ chốt stack sang triển khai thực tế cho chat 
   - `ObjectMapper` đăng ký `JavaTimeModule` để serialize `LocalDateTime`.
   - Chuẩn hóa parser `WebSocketEventType` theo cả enum name và wire value.
 - **Database Schema** (định nghĩa trong Flyway):
-  - `conversations`: id, customer_id, channel, status, lead_score, is_bot_active, assigned_agent_id.
+  - `conversations`: id, customer_id, channel, status (`ACTIVE` | `COLLECTING_CONTACT` | `HANDED_OVER` | `CLOSED`), lead_score, is_bot_active, assigned_agent_id.
   - `messages`: id, conversation_id, sender, sender_type, content, timestamp.
-  - `potential_leads`: id, conversation_id, intent_summary, priority. (Cột `estimated_value` đã bị xóa theo yêu cầu).
+  - `potential_leads`: id, conversation_id, intent_summary, priority, customer_name, phone, email, contact_collected_at. (Cột `estimated_value` đã bị xóa theo yêu cầu).
+- **Notification Module** (`notification/`):
+  - `NotificationService` / `NotificationServiceImpl` — gửi email async (@Async) qua `JavaMailSender`.
+  - Template Thymeleaf: `lead_notification.html` (dark mode, Lead Score badge, CTA link vào Admin).
+  - Cấu hình qua env var: `MAIL_USERNAME`, `MAIL_PASSWORD` (Gmail App Password), `AGENT_EMAIL`, `FRONTEND_URL`.
 
 ### 3. AI Service (Google Gemini)
 - Hệ thống tích hợp trực tiếp với **Gemini 1.5 Flash** thông qua Spring AI.

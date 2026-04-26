@@ -287,11 +287,29 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     }
 
     /**
-     * Gửi email thông báo lead cho nhân viên
+     * Gửi email thông báo lead cho nhân viên.
+     * Tự động gọi AI tóm tắt hội thoại trước khi gửi.
      */
     private void sendLeadEmail(PotentialLead lead, Conversation conversation) {
         Long conversationId = conversation.getId();
         String conversationLink = frontendUrl + "/admin?conv=" + conversationId;
+
+        // Lấy toàn bộ lịch sử tin nhắn để tóm tắt
+        List<String> history = messageRepository.findByConversationIdOrderByTimestampAsc(conversationId).stream()
+                .filter(m -> !m.getContent().startsWith(CONTACT_PREFIX)) // Bỏ tin nhắn contact prefix
+                .map(m -> {
+                    String label = switch (m.getSenderType()) {
+                        case "user"  -> "Khách hàng";
+                        case "bot"   -> "Bot";
+                        case "agent" -> "Nhân viên";
+                        default      -> m.getSenderType();
+                    };
+                    return label + ": " + m.getContent();
+                })
+                .collect(Collectors.toList());
+
+        // Gọi AI tóm tắt hội thoại (async sẽ xử lý song song)
+        String conversationSummary = aiScoringClient.summarizeConversation(history);
 
         LeadNotificationData notificationData = LeadNotificationData.builder()
                 .customerName(lead.getCustomerName())
@@ -299,12 +317,14 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 .email(lead.getEmail())
                 .leadScore(conversation.getLeadScore())
                 .intentSummary(lead.getIntentSummary())
+                .conversationSummary(conversationSummary)
                 .conversationId(conversationId)
                 .conversationLink(conversationLink)
                 .build();
 
         notificationService.sendLeadNotification(notificationData);
     }
+
 
     /**
      * Broadcast điểm số mới lên Admin Dashboard qua STOMP

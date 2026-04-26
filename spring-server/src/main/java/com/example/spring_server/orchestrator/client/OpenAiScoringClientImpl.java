@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * OpenAiScoringClientImpl
- * 
+ *
  * Triển khai AI thực tế sử dụng OpenAI thông qua Spring AI.
  */
 @Service
@@ -81,13 +81,48 @@ public class OpenAiScoringClientImpl implements AiScoringClient {
                     .entity(AiAnalysisResult.class);
         } catch (Exception e) {
             log.error("Error calling OpenAI API: ", e);
-            // Fallback an toàn khi API gặp lỗi
             return AiAnalysisResult.builder()
                     .intent("neutral")
                     .sentiment("neutral")
                     .scoreIncrement(0)
                     .reply("Dạ, em đã ghi nhận yêu cầu của anh/chị. Anh/chị vui lòng đợi trong giây lát để chuyên viên của SmartAgent kiểm tra và phản hồi kỹ hơn nhé.")
                     .build();
+        }
+    }
+
+    @Override
+    public String summarizeConversation(List<String> history) {
+        log.info("AI đang tóm tắt hội thoại ({} tin nhắn)...", history.size());
+
+        if (history.isEmpty()) {
+            return "Không có nội dung hội thoại.";
+        }
+
+        String transcript = String.join("\n", history);
+
+        try {
+            return chatClient.prompt()
+                    .system(s -> s.param("businessContext", businessContext))
+                    .user(u -> u
+                            .text("""
+                                Dưới đây là toàn bộ hội thoại giữa bot và khách hàng:
+                                
+                                {transcript}
+                                
+                                Nhiệm vụ: Hãy tóm tắt hội thoại này thành 3-5 câu súc tích bằng tiếng Việt để nhân viên có thể nắm bắt nhanh:
+                                - Khách hàng cần gì / vấn đề là gì?
+                                - Điểm quan trọng nào đã được thảo luận?
+                                - Lý do cần nhân viên tiếp nhận?
+                                
+                                Chỉ trả về đoạn tóm tắt, không cần giải thích thêm.
+                                """)
+                            .param("transcript", transcript)
+                    )
+                    .call()
+                    .content();
+        } catch (Exception e) {
+            log.error("Lỗi khi tóm tắt hội thoại: ", e);
+            return "Không thể tạo tóm tắt tự động. Vui lòng xem chi tiết hội thoại trong hệ thống.";
         }
     }
 }

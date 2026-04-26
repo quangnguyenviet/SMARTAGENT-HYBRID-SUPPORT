@@ -23,6 +23,9 @@ public class LeadNotificationData {
     private Integer leadScore;
     private String intentSummary;
 
+    // Tóm tắt hội thoại do AI tạo ra
+    private String conversationSummary;
+
     // Thông tin hội thoại
     private Long conversationId;
     private String conversationLink;

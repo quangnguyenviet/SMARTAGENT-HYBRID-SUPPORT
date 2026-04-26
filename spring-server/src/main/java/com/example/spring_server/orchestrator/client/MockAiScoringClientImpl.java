@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -62,5 +61,12 @@ public class MockAiScoringClientImpl implements AiScoringClient {
         }
 
         return result;
+    }
+
+    @Override
+    public String summarizeConversation(List<String> history) {
+        log.info("[Mock] Tóm tắt hội thoại ({} tin nhắn)", history.size());
+        return "[Mock] Khách hàng đã hỏi về sản phẩm/dịch vụ và thể hiện nhu cầu rõ ràng. " +
+               "Hệ thống đánh giá đây là khách tiềm năng cần được nhân viên tiếp nhận để tư vấn chất lượng hơn.";
     }
 }

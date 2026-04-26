@@ -143,6 +143,30 @@
             color: #6366f1;
             margin-bottom: 8px;
         }
+        /* Summary box */
+        .summary-box {
+            background: linear-gradient(135deg, rgba(16,185,129,0.10), rgba(6,182,212,0.05));
+            border: 1px solid rgba(16,185,129,0.25);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 28px;
+            font-size: 14px;
+            color: #a7f3d0;
+            line-height: 1.8;
+        }
+        .summary-box .summary-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #10b981;
+            margin-bottom: 10px;
+        }
+        .summary-box p {
+            margin: 0;
+            color: #d1fae5;
+        }
+
         /* CTA Button */
         .cta-section {
             text-align: center;
@@ -212,8 +236,17 @@
         <div th:if="${intentSummary != null and !intentSummary.isEmpty()}">
             <div class="section-title">Phân tích AI</div>
             <div class="intent-box">
-                <div class="intent-label">🤖 Tóm tắt ý định</div>
+                <div class="intent-label">🎯 Ý định (Intent)</div>
                 <span th:text="${intentSummary}">Khách hỏi về giá sỉ và chính sách chiết khấu</span>
+            </div>
+        </div>
+
+        <!-- AI Conversation Summary -->
+        <div th:if="${conversationSummary != null and !conversationSummary.isEmpty()}">
+            <div class="section-title">Tóm tắt hội thoại</div>
+            <div class="summary-box">
+                <div class="summary-label">🤖 Tóm tắt tự động bởi AI</div>
+                <p th:text="${conversationSummary}" style="white-space: pre-line;">Đây là tóm tắt hội thoại...</p>
             </div>
         </div>
 

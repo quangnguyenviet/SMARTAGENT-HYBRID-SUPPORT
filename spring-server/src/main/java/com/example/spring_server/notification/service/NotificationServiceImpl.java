@@ -41,13 +41,15 @@ public class NotificationServiceImpl implements NotificationService {
 
             // Chuẩn bị context cho Thymeleaf
             Context context = new Context();
-            context.setVariable("customerName",   data.getCustomerName());
-            context.setVariable("phone",          data.getPhone());
-            context.setVariable("email",          data.getEmail());
-            context.setVariable("leadScore",      data.getLeadScore());
-            context.setVariable("intentSummary",  data.getIntentSummary());
-            context.setVariable("conversationId", data.getConversationId());
-            context.setVariable("conversationLink", data.getConversationLink());
+            context.setVariable("customerName",        data.getCustomerName());
+            context.setVariable("phone",               data.getPhone());
+            context.setVariable("email",               data.getEmail());
+            context.setVariable("leadScore",           data.getLeadScore());
+            context.setVariable("intentSummary",       data.getIntentSummary());
+            context.setVariable("conversationSummary", data.getConversationSummary());
+            context.setVariable("conversationId",      data.getConversationId());
+            context.setVariable("conversationLink",    data.getConversationLink());
+
 
             // Render HTML từ template
             String htmlContent = templateEngine.process("lead_notification", context);

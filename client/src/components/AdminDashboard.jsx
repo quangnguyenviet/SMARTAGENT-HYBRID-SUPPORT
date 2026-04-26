@@ -45,6 +45,7 @@ export default function AdminDashboard() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState('');
   const [newMessage, setNewMessage] = useState('');
+  const [inboxTab, setInboxTab] = useState('care'); // 'care' | 'all'
   const selectedConversationIdRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -52,6 +53,18 @@ export default function AdminDashboard() {
     () => conversations.find((item) => item.id === selectedConversationId) || null,
     [conversations, selectedConversationId]
   );
+
+  // Conversations cần chăm sóc: HANDED_OVER, COLLECTING_CONTACT, hoặc bot đã tắt
+  const needsCareConversations = useMemo(
+    () => conversations.filter(c =>
+      c.status === 'HANDED_OVER' ||
+      c.status === 'COLLECTING_CONTACT' ||
+      c.isBotActive === false
+    ),
+    [conversations]
+  );
+
+  const filteredConversations = inboxTab === 'care' ? needsCareConversations : conversations;
 
   const insights = useMemo(() => getConversationInsights(selectedConversation), [selectedConversation]);
 
@@ -185,7 +198,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen overflow-hidden">
       {/* Header riêng cho Admin */}
       <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4">
@@ -200,12 +213,13 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <div className="mx-auto grid flex-1 w-full max-w-[1600px] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[340px_1fr_320px] lg:px-6 overflow-hidden">
+      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[340px_1fr_320px] lg:px-6 overflow-hidden" style={{ height: 'calc(100vh - 73px)' }}>
         
         {/* CỘT 1: SMART INBOX */}
         <aside className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
-          <div className="border-b border-white/10 px-5 py-4">
-            <div className="flex items-center justify-between gap-3">
+          {/* Header */}
+          <div className="border-b border-white/10 px-5 pt-4 pb-0">
+            <div className="flex items-center justify-between gap-3 mb-3">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Smart Inbox</p>
                 <h2 className="text-lg font-semibold text-white">Khách Hàng</h2>
@@ -217,18 +231,59 @@ export default function AdminDashboard() {
                 Làm mới
               </button>
             </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1">
+              <button
+                onClick={() => setInboxTab('care')}
+                className={`relative flex-1 rounded-t-xl px-3 py-2 text-xs font-bold transition ${
+                  inboxTab === 'care'
+                    ? 'bg-rose-500/15 text-rose-300 border-t border-l border-r border-rose-500/30'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Cần Chăm Sóc
+                {needsCareConversations.length > 0 && (
+                  <span className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                    inboxTab === 'care' ? 'bg-rose-500 text-white' : 'bg-slate-700 text-slate-300'
+                  }`}>
+                    {needsCareConversations.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setInboxTab('all')}
+                className={`relative flex-1 rounded-t-xl px-3 py-2 text-xs font-bold transition ${
+                  inboxTab === 'all'
+                    ? 'bg-white/5 text-white border-t border-l border-r border-white/10'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Tất Cả
+                <span className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  inboxTab === 'all' ? 'bg-slate-600 text-slate-200' : 'bg-slate-700 text-slate-400'
+                }`}>
+                  {conversations.length}
+                </span>
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3">
             {loadingConversations ? (
               <div className="px-4 py-8 text-center text-slate-400">Đang tải...</div>
-            ) : conversations.length === 0 ? (
+            ) : filteredConversations.length === 0 ? (
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-slate-400">
-                Chưa có hội thoại nào.
+                {inboxTab === 'care' ? (
+                  <>
+                    <div className="text-2xl mb-2">✅</div>
+                    <p>Không có khách cần chăm sóc!</p>
+                  </>
+                ) : 'Chưa có hội thoại nào.'}
               </div>
             ) : (
               <div className="space-y-3">
-                {conversations.map((conversation) => {
+                {filteredConversations.map((conversation) => {
                   const isSelected = conversation.id === selectedConversationId;
                   const score = conversation.leadScore || 0;
                   const botActive = conversation.isBotActive !== false;

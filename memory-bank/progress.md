@@ -25,7 +25,9 @@
 - [x] `OrchestratorService`: Tự động phân tích tin nhắn, chấm điểm, kích hoạt Handover.
 - [x] Tích hợp AI thực tế: `gemini-1.5-flash` qua OpenAI bridge (`spring-ai-starter-model-openai`).
 - [x] AI Prompt 3 giai đoạn (Sàng lọc → Tín hiệu → Handover) với điểm nhạy bén (+10/+20/+30/+50).
-- [x] Structured Output: Kết quả AI trả về dạng `AiAnalysisResult` JSON.
+- [x] **[NEW]** Refactor AI Consultant flow: Hỗ trợ 3 trạng thái PRE-LEAD, LEAD DETECTED, POST-LEAD.
+- [x] **[NEW]** Duy trì Bot hoạt động sau thu thập contact để trả lời khách hàng.
+- [x] Structured Output: Kết quả AI trả về dạng `AiAnalysisResult` JSON (đã ép định dạng nghiêm ngặt).
 - [x] Sự kiện `LEAD_SCORE_UPDATED` mang đầy đủ `ConversationDTO` để cập nhật Dashboard Admin realtime.
 - [x] Cơ chế chuyển đổi Mock/Real AI qua `app.ai.use-mock`.
 
@@ -41,14 +43,11 @@
 - [x] Cập nhật điểm 🔥 và trạng thái hội thoại realtime qua STOMP.
 - [x] Tính năng Take Over: `isBotActive = false`, mở khóa ô nhập liệu Admin.
 
-### Notification Module (Mới)
-- [x] `NotificationService` interface.
-- [x] `NotificationServiceImpl` — gửi email HTML async qua Gmail SMTP.
-- [x] `LeadNotificationData` DTO.
-- [x] `lead_notification.html` — Thymeleaf email template dark mode premium.
-- [x] `pom.xml`: Thêm `spring-boot-starter-mail` + `spring-boot-starter-thymeleaf`.
-- [x] `@EnableAsync` đầu trong `SpringServerApplication`.
+### Containerization & Infrastructure
+- [x] Dockerfile + Docker Compose cho toàn bộ hệ thống.
+- [x] **[FIX]** WebSocket/CORS issues trong môi trường Docker (port 80).
 - [x] Gmail SMTP config + `app.notification.*` trong `application.yaml`.
+- [x] `@EnableAsync` đầu trong `SpringServerApplication`.
 
 ### Bot Thu Thập Contact
 - [x] V2 Flyway migration: thêm `customer_name`, `phone`, `email`, `contact_collected_at` vào `potential_leads`. Xóa `estimated_value`.
@@ -79,6 +78,7 @@
 ## Commits Quan Trọng
 | Commit | Mô tả |
 |--------|--------|
+| `b00ac7a` | feat: refactor chat flow with multi-state AI consulting and fix Docker CORS issues |
 | `78a2f71` | feat: bot auto-collect contact info & email notification to agent |
 | `c97c860` | feat: real-time lead scoring, landing page with chat widget, fix JSX errors |
 | `33f6b64` | feat: optimize AI prompt for complaint handling |

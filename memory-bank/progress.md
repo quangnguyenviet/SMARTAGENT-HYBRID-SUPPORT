@@ -60,6 +60,8 @@
 
 ### Fix Layout Admin
 - [x] `AdminDashboard.jsx`: 3 cột không còn bị kéo dài theo cột cao nhất (`h-screen` + `calc(100vh - 73px)`).
+- [x] Đổi tên nhãn "Cần Chăm Sóc" thành "Manual".
+- [x] **[FIX]** Sửa lỗi crash màn hình do thiếu `messagesEndRef` trong `ChatWindow.jsx`.
 
 - [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
 
@@ -67,8 +69,6 @@
 
 ### Phát Triển (Development)
 - [ ] **Security Module**: JWT Authentication, phân quyền Admin/Agent endpoint.
-- [ ] **Test E2E email**: Xác nhận Gmail App Password, nhận email đúng format.
-- [ ] **Flyway V2**: Đã có sẵn, chạy lần đầu sẽ tự apply.
 - [ ] **Đa kênh**: Tích hợp Zalo, Facebook Messenger vào hệ thống routing.
 - [ ] **Thống kê**: Dashboard tổng hợp số liệu (Lead mới/ngày, tỷ lệ chuyển đổi, v.v.).
 

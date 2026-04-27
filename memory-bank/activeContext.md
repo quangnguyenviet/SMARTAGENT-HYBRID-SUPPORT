@@ -18,12 +18,14 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 - **✅ Sửa lỗi Race Condition**: Trích xuất SĐT/Email ngay đầu luồng xử lý để AI không hỏi lại thông tin vừa mới cung cấp.
 - **✅ Ổn định AI Response**: Ép định dạng JSON nghiêm ngặt và sửa lỗi ghi đè System Prompt khi truyền tham số.
 - **✅ Typing Indicator**: Triển khai tính năng "đang nhập" (Real-time Typing) cho Khách hàng, Bot và Nhân viên.
+- **✅ Bug Fix**: Sửa lỗi `ReferenceError: messagesEndRef` gây crash Landing Page.
 
 ### Docker & WebSocket Fixes
 - **✅ CORS Configuration**: Cập nhật `CorsConfig.java` và `WebSocketConfig.java` cho phép origin `http://localhost` (dành cho Docker deployment trên port 80).
 
 ### Fix Layout Admin Dashboard
 - **✅ `AdminDashboard.jsx`**: Đổi outer div từ `min-h-screen` → `h-screen overflow-hidden`. Grid container dùng `height: calc(100vh - 73px)` thay vì `flex-1` → 3 cột không còn bị kéo dài theo cột cao nhất.
+- **✅ Label Renaming**: Đổi tên nhãn "Cần Chăm Sóc" thành "Manual" để chuyên nghiệp hơn.
 
 ### Containerization (Docker)
 - **✅ Dockerfile**: Tạo Dockerfile cho cả `spring-server` và `client`.

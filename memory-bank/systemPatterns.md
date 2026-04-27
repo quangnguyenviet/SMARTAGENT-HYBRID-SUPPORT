@@ -26,6 +26,10 @@ Hệ thống SmartAgent được thiết kế theo hướng **Modular Monolith**
   - `/topic/messages/{convId}`: Luồng tin nhắn realtime.
   - `/topic/conversations`: Cập nhật inbox cho Admin Dashboard.
 
+### 4. Multi-Subscription WebSocket Pattern (Frontend)
+- **Mô hình**: `chatService.js` được thiết kế để quản lý đồng thời nhiều đăng ký (subscriptions) STOMP.
+- **Lợi ích**: Cho phép Admin Dashboard duy trì kết nối với topic tổng `/topic/admin/conversations` (để cập nhật danh sách inbox) đồng thời subscribe/unsubscribe linh hoạt vào các topic hội thoại cụ thể `/topic/chat/{id}` khi chọn khách hàng (để nhận typing indicator và tin nhắn mới).
+
 ### 4. AI-Driven Handover & Session State
 - **Nhiệm vụ**: Quản lý việc chuyển giao quyền kiểm soát hội thoại giữa Bot và Human.
 - **Quy tắc**: Dựa trên kết quả từ AI Service, cập nhật trạng thái session trong **Redis** (ví dụ: `is_bot_active: false`, bật cờ ưu tiên). Redis giúp đồng bộ trạng thái cực nhanh giữa các node.

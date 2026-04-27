@@ -7,13 +7,14 @@ import java.util.List;
 public interface AiScoringClient {
     
     /**
-     * Phân tích tin nhắn mới nhất dựa trên ngữ cảnh lịch sử
+     * Phân tích tin nhắn mới nhất dựa trên ngữ cảnh lịch sử và trạng thái Lead.
      *
      * @param currentMessage Tin nhắn vừa nhận
      * @param history Lịch sử các tin nhắn trước đó (để AI hiểu ngữ cảnh)
+     * @param isLead Trạng thái đã thu thập đủ thông tin liên hệ chưa
      * @return Kết quả phân tích (điểm số, ý định, câu trả lời)
      */
-    AiAnalysisResult analyzeMessage(String currentMessage, List<String> history);
+    AiAnalysisResult analyzeMessage(String currentMessage, List<String> history, boolean isLead);
 
     /**
      * Tóm tắt toàn bộ hội thoại thành đoạn văn ngắn gọn cho nhân viên đọc trước khi tiếp nhận.

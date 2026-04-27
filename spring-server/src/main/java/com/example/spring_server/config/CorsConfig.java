@@ -22,7 +22,7 @@ public class CorsConfig implements WebMvcConfigurer {
 
         // CORS for WebSocket upgrade requests
         registry.addMapping("/ws/**")
-            .allowedOrigins("http://localhost:5173", "http://localhost:3000")
+            .allowedOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost")
             .allowedMethods("GET", "POST", "OPTIONS")
             .allowedHeaders("*")
             .allowCredentials(true);

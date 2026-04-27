@@ -45,7 +45,7 @@ spring:
 app:
   ai:
     use-mock: false
-    business-context: "Chúng tôi là công ty outsourcing phần mềm chuyên nghiệp. Quy trình: 1. Hỏi nhu cầu -> 2. Tư vấn sơ bộ -> 3. Chuyển cho kỹ thuật báo giá chi tiết."
+    business-context: "Chúng tôi là công ty outsourcing phần mềm chuyên nghiệp. Quy trình: 1. Hỏi nhu cầu -> 2. Tư vấn sơ bộ -> 3. Chuyển cho kỹ thuật tư vấn chi tiết."
 
   notification:
     agent-email: ${AGENT_EMAIL}         # Email nhân viên nhận thông báo

@@ -26,6 +26,9 @@ export default function AdminDashboard() {
   const [inboxTab, setInboxTab] = useState('care'); // 'care' | 'all'
   const selectedConversationIdRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const [isCustomerTyping, setIsCustomerTyping] = useState(false);
+  const adminTypingTimeoutRef = useRef(null);
+  const lastAdminTypingSentRef = useRef(0);
 
   const selectedConversation = useMemo(
     () => conversations.find((item) => item.id === selectedConversationId) || null,
@@ -51,9 +54,22 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     selectedConversationIdRef.current = selectedConversationId;
+    setIsCustomerTyping(false); // Reset typing status when conversation changes
+
     if (selectedConversationId) {
       loadMessages(selectedConversationId);
+      
+      // Subscribe to specific conversation for real-time events like TYPING
+      chatService.subscribeToConversation(selectedConversationId, (msg) => {
+        if (msg.eventType === 'TYPING_INDICATOR') {
+          if (msg.senderType === 'user') {
+            setIsCustomerTyping(msg.content === 'typing');
+          }
+        }
+      });
     }
+
+    return () => chatService.unsubscribeFromConversation();
   }, [selectedConversationId]);
 
   // Scroll to bottom when new messages arrive
@@ -160,8 +176,6 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation) return;
 
-    console.log("Admin sending message:", newMessage);
-    
     // Gửi tin nhắn admin qua WebSocket
     // Chúng ta giả định agentId = 1 (Nhân viên)
     chatService.sendWebSocketMessage(
@@ -171,7 +185,31 @@ export default function AdminDashboard() {
       newMessage
     );
 
+    // Stop typing indicator
+    if (adminTypingTimeoutRef.current) clearTimeout(adminTypingTimeoutRef.current);
+    chatService.sendTypingIndicator(selectedConversation.id, "Nhân viên hỗ trợ", "agent", false);
+    lastAdminTypingSentRef.current = 0;
+
     setNewMessage('');
+  };
+
+  const handleAdminInputChange = (e) => {
+    const value = e.target.value;
+    setNewMessage(value);
+
+    if (selectedConversationId && chatService.isConnected()) {
+      const now = Date.now();
+      if (now - lastAdminTypingSentRef.current > 3000) {
+        chatService.sendTypingIndicator(selectedConversationId, "Nhân viên hỗ trợ", "agent", true);
+        lastAdminTypingSentRef.current = now;
+      }
+
+      if (adminTypingTimeoutRef.current) clearTimeout(adminTypingTimeoutRef.current);
+      adminTypingTimeoutRef.current = setTimeout(() => {
+        chatService.sendTypingIndicator(selectedConversationId, "Nhân viên hỗ trợ", "agent", false);
+        lastAdminTypingSentRef.current = 0;
+      }, 3000);
+    }
   };
 
   return (
@@ -359,6 +397,19 @@ export default function AdminDashboard() {
                     </div>
                   );
                 })}
+                
+                {/* Customer typing indicator */}
+                {isCustomerTyping && (
+                  <div className="flex justify-start">
+                    <div className="bg-slate-800 border border-white/10 rounded-2xl rounded-tl-none px-4 py-3 shadow-lg">
+                      <div className="flex gap-1">
+                        <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                        <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </>
             )}
@@ -371,7 +422,7 @@ export default function AdminDashboard() {
                 <input
                   type="text"
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={handleAdminInputChange}
                   placeholder={selectedConversation.isBotActive !== false ? "Vui lòng bấm 'TAKE OVER' để nhắn tin..." : "Nhập tin nhắn hỗ trợ khách hàng..."}
                   disabled={selectedConversation.isBotActive !== false}
                   className="w-full rounded-2xl border border-white/10 bg-slate-800/50 py-3 pl-4 pr-12 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"

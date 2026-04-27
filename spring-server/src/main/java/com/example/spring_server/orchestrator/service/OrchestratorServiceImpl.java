@@ -65,6 +65,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     @Transactional
     public void processUserMessage(Long conversationId, String content) {
         log.info("Orchestrator bắt đầu xử lý tin nhắn cho hội thoại: {}", conversationId);
+        
+        // Bật chỉ báo typing cho Bot
+        sendBotTyping(conversationId, true);
 
         Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
         if (conversation == null) {
@@ -349,12 +352,34 @@ public class OrchestratorServiceImpl implements OrchestratorService {
      */
     private void sendBotReply(Long conversationId, String content) {
         if (content == null || content.isBlank()) return;
+        
+        // Tắt typing trước khi gửi tin nhắn
+        sendBotTyping(conversationId, false);
+
         MessageDTO botReply = MessageDTO.builder()
                 .sender("AI Assistant")
                 .senderType("bot")
                 .content(content)
                 .build();
         chatService.sendMessage(conversationId, botReply);
+    }
+
+    /**
+     * Gửi trạng thái typing của Bot qua WebSocket
+     */
+    private void sendBotTyping(Long conversationId, boolean isTyping) {
+        try {
+            messagingTemplate.convertAndSend("/topic/chat/" + conversationId,
+                    com.example.spring_server.chat.dto.WebSocketMessageDTO.builder()
+                            .eventType("TYPING_INDICATOR")
+                            .conversationId(conversationId)
+                            .sender("AI Assistant")
+                            .senderType("bot")
+                            .content(isTyping ? "typing" : "stopped")
+                            .build());
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi bot typing indicator: {}", e.getMessage());
+        }
     }
 
     /**

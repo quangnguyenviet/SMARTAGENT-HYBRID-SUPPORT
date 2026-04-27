@@ -17,6 +17,7 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 - **✅ Duy trì Bot hoạt động**: Refactor `OrchestratorServiceImpl` để bot không tự tắt ngay khi có contact. Bot đóng vai trò "gatekeeper" cho đến khi Agent thực sự Take Over.
 - **✅ Sửa lỗi Race Condition**: Trích xuất SĐT/Email ngay đầu luồng xử lý để AI không hỏi lại thông tin vừa mới cung cấp.
 - **✅ Ổn định AI Response**: Ép định dạng JSON nghiêm ngặt và sửa lỗi ghi đè System Prompt khi truyền tham số.
+- **✅ Typing Indicator**: Triển khai tính năng "đang nhập" (Real-time Typing) cho Khách hàng, Bot và Nhân viên.
 
 ### Docker & WebSocket Fixes
 - **✅ CORS Configuration**: Cập nhật `CorsConfig.java` và `WebSocketConfig.java` cho phép origin `http://localhost` (dành cho Docker deployment trên port 80).
@@ -34,6 +35,7 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 - **Cấu trúc Prompt tập trung**: Sử dụng biến hằng số `SYSTEM_PROMPT_TEMPLATE` để tránh lỗi ghi đè instruction của Spring AI.
 - **Giữ Bot Active (POST-LEAD)**: Quyết định không tắt bot ngay lập tức sau khi có contact để bot xử lý các câu hỏi "bao giờ gọi lại", "cảm ơn" của khách.
 - **Cấu hình Docker port 80**: Thống nhất dùng `http://localhost` không port làm origin chính cho môi trường deploy.
+- **Multi-Subscription WebSocket**: Refactor `chatService.js` để hỗ trợ Admin vừa nhận update hệ thống vừa nhận event chi tiết trong hội thoại (typing).
 
 ## Bước Tiếp Theo
 1. **Security Module**: Triển khai JWT và phân quyền Admin.

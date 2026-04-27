@@ -20,6 +20,7 @@
 - [x] Conversation Entity có quan hệ `@OneToOne` với `PotentialLead`.
 - [x] `ConversationDTO` bao gồm `leadScore`, `intentSummary`, `sentiment`.
 - [x] `ChatServiceImpl.entityToDTO()` map dữ liệu từ `PotentialLead` vào DTO.
+- [x] **[NEW]** Real-time Typing Indicator logic in `ChatWebSocketController`.
 
 ### Orchestrator & AI Module
 - [x] `OrchestratorService`: Tự động phân tích tin nhắn, chấm điểm, kích hoạt Handover.
@@ -41,6 +42,7 @@
 - [x] `AdminDashboard.jsx`: Giao diện 3 cột (Smart Inbox | Workspace | AI Insights) với Header riêng.
 - [x] Cột AI Insights hiển thị `intentSummary` thật từ AI Backend.
 - [x] Cập nhật điểm 🔥 và trạng thái hội thoại realtime qua STOMP.
+- [x] **[NEW]** Real-time Typing Indicator UI cho cả Khách hàng và Admin.
 - [x] Tính năng Take Over: `isBotActive = false`, mở khóa ô nhập liệu Admin.
 
 ### Containerization & Infrastructure

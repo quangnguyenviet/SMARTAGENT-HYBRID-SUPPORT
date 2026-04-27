@@ -8,7 +8,7 @@ class ChatService {
     this.client = null;
     this.listeners = [];
     this.conversationId = null;
-    this.subscription = null;
+    this.subscriptions = {}; // Store multiple subscriptions
   }
 
   // REST API - Create new conversation
@@ -90,33 +90,66 @@ class ChatService {
   // STOMP WebSocket - Connect for Customer
   connectWebSocket(conversationId) {
     return this._connect(() => {
-      // Subscribe to the specific room
-      this.subscription = this.client.subscribe(`/topic/chat/${conversationId}`, (message) => {
+      this.subscribeToTopic(`/topic/chat/${conversationId}`, (message) => {
         if (message.body) {
           const parsedMessage = JSON.parse(message.body);
-          parsedMessage.eventType = 'new_message';
+          if (!parsedMessage.eventType) {
+            parsedMessage.eventType = 'new_message';
+          }
           this.notifyListeners(parsedMessage);
         }
-      });
+      }, 'customer_chat');
     });
   }
 
   // STOMP WebSocket - Connect for Admin
   connectAdminWebSocket(onAdminEvent) {
     return this._connect(() => {
-      // Subscribe to global admin topic
-      this.subscription = this.client.subscribe('/topic/admin/conversations', (message) => {
+      this.subscribeToTopic('/topic/admin/conversations', (message) => {
         if (message.body) {
           const event = JSON.parse(message.body);
           onAdminEvent(event);
         }
-      });
+      }, 'admin_global');
     });
+  }
+
+  // Admin: subscribe to a specific conversation for typing/updates
+  subscribeToConversation(conversationId, onMessage) {
+    this.subscribeToTopic(`/topic/chat/${conversationId}`, (message) => {
+      if (message.body) {
+        const parsedMessage = JSON.parse(message.body);
+        onMessage(parsedMessage);
+      }
+    }, 'conversation_detail');
+  }
+
+  unsubscribeFromConversation() {
+    if (this.subscriptions['conversation_detail']) {
+      this.subscriptions['conversation_detail'].unsubscribe();
+      delete this.subscriptions['conversation_detail'];
+    }
+  }
+
+  // Generic subscribe method
+  subscribeToTopic(topic, callback, key) {
+    if (this.client && this.client.connected) {
+      // Unsubscribe existing if same key
+      if (this.subscriptions[key]) {
+        this.subscriptions[key].unsubscribe();
+      }
+      this.subscriptions[key] = this.client.subscribe(topic, callback);
+    }
   }
 
   // Internal common connect logic
   _connect(onConnectCallback) {
     return new Promise((resolve, reject) => {
+      if (this.client && this.client.connected) {
+        if (onConnectCallback) onConnectCallback();
+        return resolve();
+      }
+
       this.client = new Client({
         brokerURL: WS_BROKER_URL,
         reconnectDelay: 5000,
@@ -157,6 +190,21 @@ class ChatService {
     }
   }
 
+  sendTypingIndicator(conversationId, sender, senderType, isTyping) {
+    if (this.client && this.client.connected) {
+      this.client.publish({
+        destination: '/app/chat.sendMessage',
+        body: JSON.stringify({
+          eventType: 'TYPING_INDICATOR',
+          conversationId,
+          sender,
+          senderType,
+          content: isTyping ? 'typing' : 'stopped',
+        })
+      });
+    }
+  }
+
   isConnected() {
     return this.client && this.client.connected;
   }
@@ -174,10 +222,11 @@ class ChatService {
   }
 
   disconnect() {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-      this.subscription = null;
-    }
+    Object.keys(this.subscriptions).forEach(key => {
+      this.subscriptions[key].unsubscribe();
+    });
+    this.subscriptions = {};
+    
     if (this.client) {
       this.client.deactivate();
       this.client = null;

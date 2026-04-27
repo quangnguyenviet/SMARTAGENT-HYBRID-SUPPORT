@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 /**
@@ -22,6 +23,7 @@ public class ChatWebSocketController {
 
     private final ChatService chatService;
     private final OrchestratorService orchestratorService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/chat.sendMessage")
     public void handleIncomingMessage(@Payload WebSocketMessageDTO incomingMsg) {
@@ -46,7 +48,8 @@ public class ChatWebSocketController {
         } else if ("TYPING_INDICATOR".equals(incomingMsg.getEventType())) {
             log.debug("Typing indicator: conversationId={}, sender={}",
                     incomingMsg.getConversationId(), incomingMsg.getSender());
-            // Optionally, we could broadcast typing status back to /topic/chat/{conversationId} here.
+            // Broadcast typing status back to /topic/chat/{conversationId}
+            messagingTemplate.convertAndSend("/topic/chat/" + incomingMsg.getConversationId(), incomingMsg);
         } else {
             log.warn("Unhandled STOMP event type: {}", incomingMsg.getEventType());
         }

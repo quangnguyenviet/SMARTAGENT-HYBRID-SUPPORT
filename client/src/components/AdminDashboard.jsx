@@ -219,7 +219,7 @@ export default function AdminDashboard() {
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Cần Chăm Sóc
+                Manual
                 {needsCareConversations.length > 0 && (
                   <span className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
                     inboxTab === 'care' ? 'bg-rose-500 text-white' : 'bg-slate-700 text-slate-300'
@@ -254,7 +254,7 @@ export default function AdminDashboard() {
                 {inboxTab === 'care' ? (
                   <>
                     <div className="text-2xl mb-2">✅</div>
-                    <p>Không có khách cần chăm sóc!</p>
+                    <p>Không có khách cần Manual!</p>
                   </>
                 ) : 'Chưa có hội thoại nào.'}
               </div>
@@ -280,7 +280,7 @@ export default function AdminDashboard() {
                           <span className="text-sm font-bold text-white">Khách hàng #{conversation.customerId}</span>
                           <div className="mt-1 flex items-center gap-2">
                             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${botActive ? 'bg-blue-500/20 text-blue-300' : 'bg-rose-500/20 text-rose-300 border border-rose-500/50 animate-pulse'}`}>
-                              {botActive ? '🤖 Bot Auto' : '👩‍💼 Cần Chăm Sóc'}
+                              {botActive ? '🤖 Bot Auto' : '👩‍💼 Manual'}
                             </span>
                           </div>
                         </div>

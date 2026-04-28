@@ -3,7 +3,7 @@
 ## Trạng Thái Dự Án
 Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải qua đợt refactor lớn về luồng chat (Chat Flow) để tối ưu hóa trải nghiệm khách hàng theo phong cách "AI Consultant". Hệ thống đã được cấu hình chạy ổn định trên Docker với đầy đủ các bản vá lỗi WebSocket/CORS.
 
-- Commit mới nhất: `b00ac7a`.
+- Commit mới nhất: `e4bd023`.
 - Backend: Đã tích hợp AI Prompt 3 giai đoạn (PRE-LEAD, LEAD DETECTED, POST-LEAD).
 - Docker: Đã cấu hình CORS cho phép origin `http://localhost`.
 
@@ -18,9 +18,10 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 - **✅ Sửa lỗi Race Condition**: Trích xuất SĐT/Email ngay đầu luồng xử lý để AI không hỏi lại thông tin vừa mới cung cấp.
 - **✅ Ổn định AI Response**: Ép định dạng JSON nghiêm ngặt và sửa lỗi ghi đè System Prompt khi truyền tham số.
 - **✅ Typing Indicator**: Triển khai tính năng "đang nhập" (Real-time Typing) cho Khách hàng, Bot và Nhân viên.
-- **✅ Facebook Messenger**: Hoàn tất tích hợp Webhook & Send API, hỗ trợ chat đa kênh đồng bộ với Admin Dashboard.
+- **✅ Facebook Messenger**: Hoàn tất tích hợp Webhook, Send API & Profile API (tự động lấy tên Facebook khách hàng).
 - **✅ Refactor customerId**: Chuyển đổi `customerId` từ `Long` sang `String` trên toàn hệ thống để hỗ trợ các bên thứ ba (PSID).
-- **✅ Bug Fix**: Sửa lỗi `ReferenceError: messagesEndRef` gây crash Landing Page.
+- **✅ Tối ưu AI Model**: Chuyển đổi sang `gemini-2.5-flash-lite` để tăng tốc độ phản hồi và tiết kiệm tài nguyên.
+- **✅ Bug Fix**: Sửa lỗi `ReferenceError: messagesEndRef` và lỗi cú pháp trong `MessengerService`.
 
 ### Docker & WebSocket Fixes
 - **✅ CORS Configuration**: Cập nhật `CorsConfig.java` và `WebSocketConfig.java` cho phép origin `http://localhost` (dành cho Docker deployment trên port 80).
@@ -29,6 +30,7 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 - **✅ `AdminDashboard.jsx`**: Đổi outer div từ `min-h-screen` → `h-screen overflow-hidden`. Grid container dùng `height: calc(100vh - 73px)` thay vì `flex-1` → 3 cột không còn bị kéo dài theo cột cao nhất.
 - **✅ Label Renaming**: Đổi tên nhãn "Cần Chăm Sóc" thành "Manual" để chuyên nghiệp hơn.
 - **✅ Customer Naming**: Hiển thị tên thật của khách hàng (thu thập từ Bot) trên Admin Dashboard thay vì chỉ hiển thị mã ID.
+- **✅ Channel Filter**: Triển khai bộ lọc kênh (All, Web, Facebook) trên Frontend của trang Admin.
 
 ### Containerization (Docker)
 - **✅ Dockerfile**: Tạo Dockerfile cho cả `spring-server` và `client`.

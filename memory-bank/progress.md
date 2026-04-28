@@ -61,6 +61,7 @@
 ### Fix Layout Admin
 - [x] `AdminDashboard.jsx`: 3 cột không còn bị kéo dài theo cột cao nhất (`h-screen` + `calc(100vh - 73px)`).
 - [x] Đổi tên nhãn "Cần Chăm Sóc" thành "Manual".
+- [x] Bộ lọc kênh hội thoại (Web/Facebook) trên Frontend.
 - [x] Hiển thị tên khách hàng thật trên Admin Dashboard (thu thập từ PotentialLead).
 - [x] **[FIX]** Sửa lỗi crash màn hình do thiếu `messagesEndRef` trong `ChatWindow.jsx`.
 
@@ -79,10 +80,10 @@
 - [ ] Đánh giá tốc độ phản hồi AI thực tế.
 - [ ] Test stress: Nhiều hội thoại đồng thời.
 
-## Commits Quan Trọng
 | Commit | Mô tả |
 |--------|--------|
-| `b00ac7a` | feat: refactor chat flow with multi-state AI consulting and fix Docker CORS issues |
+| `e4bd023` | feat(admin): improve customer naming, fix Messenger profile fetching and switch to gemini-lite |
+| `8fc3dd6` | feat(chanel): integrate messenger |
 | `78a2f71` | feat: bot auto-collect contact info & email notification to agent |
 | `c97c860` | feat: real-time lead scoring, landing page with chat widget, fix JSX errors |
 | `33f6b64` | feat: optimize AI prompt for complaint handling |

@@ -24,6 +24,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [inboxTab, setInboxTab] = useState('care'); // 'care' | 'all'
+  const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'web' | 'facebook'
   const selectedConversationIdRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [isCustomerTyping, setIsCustomerTyping] = useState(false);
@@ -45,7 +46,15 @@ export default function AdminDashboard() {
     [conversations]
   );
 
-  const filteredConversations = inboxTab === 'care' ? needsCareConversations : conversations;
+  const filteredConversations = useMemo(() => {
+    let base = inboxTab === 'care' ? needsCareConversations : conversations;
+    
+    if (channelFilter !== 'all') {
+      base = base.filter(c => (c.channel || 'web').toLowerCase() === channelFilter);
+    }
+    
+    return base;
+  }, [inboxTab, needsCareConversations, conversations, channelFilter]);
 
 
   useEffect(() => {
@@ -282,6 +291,29 @@ export default function AdminDashboard() {
                 </span>
               </button>
             </div>
+            
+            {/* Channel Filter Bar */}
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 bg-white/[0.02]">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mr-1">Lọc theo:</span>
+              <button 
+                onClick={() => setChannelFilter('all')}
+                className={`px-2 py-1 rounded-md text-[10px] font-bold transition ${channelFilter === 'all' ? 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/50' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                Tất cả
+              </button>
+              <button 
+                onClick={() => setChannelFilter('web')}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold transition ${channelFilter === 'web' ? 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/50' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                <span>🌐</span> Web
+              </button>
+              <button 
+                onClick={() => setChannelFilter('facebook')}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold transition ${channelFilter === 'facebook' ? 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/50' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                <span>💬</span> FB
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3">
@@ -316,7 +348,7 @@ export default function AdminDashboard() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-white">
-                            {conversation.customerName || `Khách hàng (${conversation.channel || 'Web'})`}
+                            {conversation.customerName || `Khách hàng #${conversation.customerId} (${conversation.channel || 'Web'})`}
                           </span>
                           <div className="mt-1 flex items-center gap-2">
                             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${botActive ? 'bg-blue-500/20 text-blue-300' : 'bg-rose-500/20 text-rose-300 border border-rose-500/50 animate-pulse'}`}>
@@ -352,7 +384,7 @@ export default function AdminDashboard() {
               <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Workspace</p>
               <h2 className="text-lg font-semibold text-white">
                 {selectedConversation 
-                  ? (selectedConversation.customerName || `Khách hàng #${selectedConversation.customerId}`)
+                  ? (selectedConversation.customerName || `Khách hàng #${selectedConversation.customerId} (${selectedConversation.channel || 'Web'})`)
                   : 'Chưa chọn hội thoại'}
               </h2>
             </div>

@@ -64,3 +64,8 @@ springdoc:
     show-common-extensions: true
   cache:
     disabled: true                              # Refresh on every reload (dev mode)
+
+facebook:
+  page-access-token: ${FB_PAGE_ACCESS_TOKEN:}
+  app-secret: ${FB_APP_SECRET:}
+  verify-token: ${FB_VERIFY_TOKEN:smartagent_verify_token}

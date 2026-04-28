@@ -18,6 +18,8 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 - **✅ Sửa lỗi Race Condition**: Trích xuất SĐT/Email ngay đầu luồng xử lý để AI không hỏi lại thông tin vừa mới cung cấp.
 - **✅ Ổn định AI Response**: Ép định dạng JSON nghiêm ngặt và sửa lỗi ghi đè System Prompt khi truyền tham số.
 - **✅ Typing Indicator**: Triển khai tính năng "đang nhập" (Real-time Typing) cho Khách hàng, Bot và Nhân viên.
+- **✅ Facebook Messenger**: Hoàn tất tích hợp Webhook & Send API, hỗ trợ chat đa kênh đồng bộ với Admin Dashboard.
+- **✅ Refactor customerId**: Chuyển đổi `customerId` từ `Long` sang `String` trên toàn hệ thống để hỗ trợ các bên thứ ba (PSID).
 - **✅ Bug Fix**: Sửa lỗi `ReferenceError: messagesEndRef` gây crash Landing Page.
 
 ### Docker & WebSocket Fixes
@@ -29,7 +31,7 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 
 ### Containerization (Docker)
 - **✅ Dockerfile**: Tạo Dockerfile cho cả `spring-server` và `client`.
-- **✅ docker-compose.yml**: Thiết lập orchestration cho toàn bộ hệ thống (DB, Backend, Frontend).
+- **✅ docker-compose.yml**: Thiết lập orchestration và ánh xạ đầy đủ biến môi trường (Gemini, Mail, Facebook) cho Backend.
 - **✅ Biến môi trường**: Chuyển cấu hình sang `.env` để quản lý tập trung cho Docker.
 
 ## Các Quyết Định Quan Trọng

@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CreateConversationRequest {
-    private Long customerId;
+    private String customerId;
     private String channel;
 }

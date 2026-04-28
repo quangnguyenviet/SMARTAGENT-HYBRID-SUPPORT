@@ -22,7 +22,7 @@ public interface ChatService {
      * @param channel - Communication channel (e.g., "zalo", "facebook")
      * @return Created ConversationDTO
      */
-    ConversationDTO createConversation(Long customerId, String channel);
+    ConversationDTO createConversation(String customerId, String channel);
     
     /**
      * Get conversation by ID
@@ -42,7 +42,7 @@ public interface ChatService {
      * @param customerId - ID of the customer
      * @return List of ConversationDTOs
      */
-    List<ConversationDTO> getConversationsByCustomerId(Long customerId);
+    List<ConversationDTO> getConversationsByCustomerId(String customerId);
     
     /**
      * Send a message in a conversation

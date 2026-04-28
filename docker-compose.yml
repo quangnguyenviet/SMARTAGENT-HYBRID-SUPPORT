@@ -28,6 +28,9 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - AGENT_EMAIL=${AGENT_EMAIL}
       - FRONTEND_URL=http://localhost:80
+      - FB_PAGE_ACCESS_TOKEN=${FB_PAGE_ACCESS_TOKEN}
+      - FB_APP_SECRET=${FB_APP_SECRET}
+      - FB_VERIFY_TOKEN=${FB_VERIFY_TOKEN}
     depends_on:
       - db
     networks:

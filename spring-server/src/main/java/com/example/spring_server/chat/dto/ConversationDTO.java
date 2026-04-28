@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ConversationDTO {
     private Long id;
-    private Long customerId;
+    private String customerId;
     private String channel;
     private String status;
     private Boolean isBotActive;

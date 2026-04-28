@@ -29,8 +29,8 @@ public class Conversation {
     /**
      * Customer ID - định danh khách hàng
      */
-    @Column(nullable = false)
-    private Long customerId;
+    @Column(nullable = false, length = 100)
+    private String customerId;
     
     /**
      * Channel - kênh giao tiếp (e.g., "zalo", "facebook", "website")

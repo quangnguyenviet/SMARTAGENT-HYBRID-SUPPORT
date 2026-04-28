@@ -68,8 +68,9 @@
 ## Những Việc Cần Làm Tiếp Theo (What's Left to Build)
 
 ### Phát Triển (Development)
-- [ ] **Security Module**: JWT Authentication, phân quyền Admin/Agent endpoint.
-- [ ] **Đa kênh**: Tích hợp Zalo, Facebook Messenger vào hệ thống routing.
+- [ ] **Security Module**: Đang thiết kế (JWT, authentication, authorization).
+- [x] **Đa kênh**: Tích hợp Facebook Messenger (Webhook + Send API) đã hoạt động.
+- [x] **Refactor Data**: `customerId` chuyển sang `String` (Flyway V3) hỗ trợ PSID.
 - [ ] **Thống kê**: Dashboard tổng hợp số liệu (Lead mới/ngày, tỷ lệ chuyển đổi, v.v.).
 
 ### Kiểm Thử (Testing)

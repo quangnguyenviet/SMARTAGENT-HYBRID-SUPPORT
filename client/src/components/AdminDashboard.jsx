@@ -139,6 +139,9 @@ export default function AdminDashboard() {
       });
 
       if (selectedConversationIdRef.current === event.conversation.id && event.message) {
+        // Reset unread count immediately if we are already viewing this conversation
+        markAsRead(event.conversation.id);
+        
         setMessages(prev => {
           if (prev.some(m => m.id === event.message.id)) return prev;
           return [...prev, event.message];

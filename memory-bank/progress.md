@@ -65,6 +65,7 @@
 - [x] Thay thế Lead Score bằng Số tin nhắn chưa đọc (Unread Count) trên Admin Dashboard.
 - [x] Hiển thị tên khách hàng thật trên Admin Dashboard (thu thập từ PotentialLead).
 - [x] Tối ưu khởi tạo Chat Widget (Lazy Loading + `sessionStorage`).
+- [x] **[FIX]** Sửa lỗi Unread Count vẫn tăng khi đang xem hội thoại.
 - [x] **[FIX]** Sửa lỗi gửi trùng email Lead (Sử dụng cờ `isLeadNotified`).
 - [x] **[FIX]** Sửa lỗi crash màn hình do thiếu `messagesEndRef` trong `ChatWindow.jsx`.
 

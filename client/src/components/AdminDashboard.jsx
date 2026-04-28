@@ -315,7 +315,9 @@ export default function AdminDashboard() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-white">Khách hàng #{conversation.customerId}</span>
+                          <span className="text-sm font-bold text-white">
+                            {conversation.customerName || `Khách hàng (${conversation.channel || 'Web'})`}
+                          </span>
                           <div className="mt-1 flex items-center gap-2">
                             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${botActive ? 'bg-blue-500/20 text-blue-300' : 'bg-rose-500/20 text-rose-300 border border-rose-500/50 animate-pulse'}`}>
                               {botActive ? '🤖 Bot Auto' : '👩‍💼 Manual'}
@@ -349,7 +351,9 @@ export default function AdminDashboard() {
             <div>
               <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Workspace</p>
               <h2 className="text-lg font-semibold text-white">
-                {selectedConversation ? `Hội thoại #${selectedConversation.id}` : 'Chưa chọn hội thoại'}
+                {selectedConversation 
+                  ? (selectedConversation.customerName || `Khách hàng #${selectedConversation.customerId}`)
+                  : 'Chưa chọn hội thoại'}
               </h2>
             </div>
             

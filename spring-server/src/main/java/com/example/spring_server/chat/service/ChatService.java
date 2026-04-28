@@ -88,4 +88,9 @@ public interface ChatService {
      * @param conversationId - ID of the conversation
      */
     void deleteConversation(Long conversationId);
+
+    /**
+     * Cập nhật thông tin khách hàng (Tên, SĐT, Email)
+     */
+    void updateCustomerInfo(Long conversationId, String name, String phone, String email);
 }

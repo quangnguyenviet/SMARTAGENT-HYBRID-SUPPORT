@@ -28,6 +28,7 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 ### Fix Layout Admin Dashboard
 - **✅ `AdminDashboard.jsx`**: Đổi outer div từ `min-h-screen` → `h-screen overflow-hidden`. Grid container dùng `height: calc(100vh - 73px)` thay vì `flex-1` → 3 cột không còn bị kéo dài theo cột cao nhất.
 - **✅ Label Renaming**: Đổi tên nhãn "Cần Chăm Sóc" thành "Manual" để chuyên nghiệp hơn.
+- **✅ Customer Naming**: Hiển thị tên thật của khách hàng (thu thập từ Bot) trên Admin Dashboard thay vì chỉ hiển thị mã ID.
 
 ### Containerization (Docker)
 - **✅ Dockerfile**: Tạo Dockerfile cho cả `spring-server` và `client`.

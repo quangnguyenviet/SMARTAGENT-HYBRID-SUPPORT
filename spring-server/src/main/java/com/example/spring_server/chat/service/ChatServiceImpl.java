@@ -4,6 +4,7 @@ import com.example.spring_server.chat.dto.ConversationDTO;
 import com.example.spring_server.chat.dto.MessageDTO;
 import com.example.spring_server.chat.entity.Conversation;
 import com.example.spring_server.chat.entity.Message;
+import com.example.spring_server.chat.entity.PotentialLead;
 import com.example.spring_server.chat.repository.ConversationRepository;
 import com.example.spring_server.chat.repository.MessageRepository;
 import com.example.spring_server.messenger.service.MessengerService;
@@ -206,6 +207,33 @@ public class ChatServiceImpl implements ChatService {
         conversationRepository.delete(conversation);
     }
     
+    @Override
+    public void updateCustomerInfo(Long conversationId, String name, String phone, String email) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation not found: " + conversationId));
+
+        PotentialLead lead = conversation.getPotentialLead();
+        if (lead == null) {
+            lead = PotentialLead.builder()
+                    .conversation(conversation)
+                    .build();
+            conversation.setPotentialLead(lead);
+        }
+
+        if (name != null) lead.setCustomerName(name);
+        if (phone != null) lead.setPhone(phone);
+        if (email != null) lead.setEmail(email);
+
+        conversationRepository.save(conversation);
+
+        // Broadcast update to admin dashboard
+        messagingTemplate.convertAndSend("/topic/admin/conversations",
+                AdminDashboardEvent.builder()
+                        .eventType(AdminDashboardEvent.EventType.CONVERSATION_UPDATED)
+                        .conversation(entityToDTO(conversation))
+                        .build());
+    }
+
     // Helper methods for DTO conversion
     
     private ConversationDTO entityToDTO(Conversation entity) {
@@ -217,6 +245,9 @@ public class ChatServiceImpl implements ChatService {
                 .isBotActive(entity.getIsBotActive())
                 .leadScore(entity.getLeadScore())
                 .intentSummary(entity.getPotentialLead() != null ? entity.getPotentialLead().getIntentSummary() : null)
+                .customerName(entity.getPotentialLead() != null ? entity.getPotentialLead().getCustomerName() : null)
+                .customerPhone(entity.getPotentialLead() != null ? entity.getPotentialLead().getPhone() : null)
+                .customerEmail(entity.getPotentialLead() != null ? entity.getPotentialLead().getEmail() : null)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .lastMessageTime(entity.getMessages().isEmpty() ? 

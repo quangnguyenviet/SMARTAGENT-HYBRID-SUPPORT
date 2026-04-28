@@ -61,6 +61,7 @@
 ### Fix Layout Admin
 - [x] `AdminDashboard.jsx`: 3 cột không còn bị kéo dài theo cột cao nhất (`h-screen` + `calc(100vh - 73px)`).
 - [x] Đổi tên nhãn "Cần Chăm Sóc" thành "Manual".
+- [x] Hiển thị tên khách hàng thật trên Admin Dashboard (thu thập từ PotentialLead).
 - [x] **[FIX]** Sửa lỗi crash màn hình do thiếu `messagesEndRef` trong `ChatWindow.jsx`.
 
 - [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).

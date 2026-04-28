@@ -56,4 +56,23 @@ public class MessengerService {
             log.error("Failed to send Messenger reply to {}: {}", recipientId, e.getMessage());
         }
     }
+
+    /**
+     * Lấy thông tin công khai của người dùng từ Facebook Profile API.
+     */
+    public Map<String, String> getUserProfile(String psid) {
+        if (pageAccessToken == null || pageAccessToken.isEmpty()) {
+            return null;
+        }
+
+        String url = String.format("https://graph.facebook.com/v19.0/%s?fields=first_name,last_name,name,profile_pic&access_token=%s", 
+                psid, pageAccessToken);
+
+        try {
+            return restTemplate.getForObject(url, Map.class);
+        } catch (Exception e) {
+            log.error("Failed to fetch Facebook profile for {}: {}", psid, e.getMessage());
+            return null;
+        }
+    }
 }

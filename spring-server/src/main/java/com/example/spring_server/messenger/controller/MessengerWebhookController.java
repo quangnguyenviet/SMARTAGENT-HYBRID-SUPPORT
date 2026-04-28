@@ -4,6 +4,7 @@ import com.example.spring_server.chat.dto.ConversationDTO;
 import com.example.spring_server.chat.dto.MessageDTO;
 import com.example.spring_server.chat.service.ChatService;
 import com.example.spring_server.messenger.dto.FacebookWebhookPayload;
+import com.example.spring_server.messenger.service.MessengerService;
 import com.example.spring_server.orchestrator.service.OrchestratorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ public class MessengerWebhookController {
 
     private final ChatService chatService;
     private final OrchestratorService orchestratorService;
+    private final MessengerService messengerService;
 
     /**
      * Webhook Verification (GET)
@@ -101,7 +103,23 @@ public class MessengerWebhookController {
                     .findFirst()
                     .orElseGet(() -> {
                         log.info("Creating new Facebook conversation for PSID: {}", psid);
-                        return chatService.createConversation(psid, "facebook");
+                        ConversationDTO newConv = chatService.createConversation(psid, "facebook");
+                        
+                        // Tự động lấy tên từ Facebook Profile
+                        try {
+                            java.util.Map<String, String> profile = messengerService.getUserProfile(psid);
+                            if (profile != null && profile.containsKey("name")) {
+                                String fbName = profile.get("name");
+                                log.info("Fetched Facebook profile name: {}", fbName);
+                                chatService.updateCustomerInfo(newConv.getId(), fbName, null, null);
+                                // Cập nhật lại đối tượng conversation để có tên mới
+                                return chatService.getConversation(newConv.getId()).orElse(newConv);
+                            }
+                        } catch (Exception e) {
+                            log.error("Error fetching FB profile for new conversation: {}", e.getMessage());
+                        }
+                        
+                        return newConv;
                     });
 
             // Lưu tin nhắn vào DB và broadcast qua STOMP cho Admin Dashboard

@@ -18,12 +18,12 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     /**
      * Find all conversations by customerId
      */
-    List<Conversation> findByCustomerId(Long customerId);
+    List<Conversation> findByCustomerId(String customerId);
     
     /**
      * Find active conversations by customerId
      */
-    List<Conversation> findByCustomerIdAndStatus(Long customerId, String status);
+    List<Conversation> findByCustomerIdAndStatus(String customerId, String status);
     
     /**
      * Find conversations by channel
@@ -33,5 +33,5 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     /**
      * Find conversation by customerId & channel
      */
-    Optional<Conversation> findByCustomerIdAndChannel(Long customerId, String channel);
+    Optional<Conversation> findByCustomerIdAndChannel(String customerId, String channel);
 }

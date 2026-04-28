@@ -98,7 +98,7 @@ public class ChatController {
      */
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<ApiResponse<List<ConversationDTO>>> getConversationsByCustomer(
-            @PathVariable Long customerId) {
+            @PathVariable String customerId) {
         
         log.info("Fetching conversations for customer: customerId={}", customerId);
         

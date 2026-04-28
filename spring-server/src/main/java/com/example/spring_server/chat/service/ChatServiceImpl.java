@@ -4,8 +4,10 @@ import com.example.spring_server.chat.dto.ConversationDTO;
 import com.example.spring_server.chat.dto.MessageDTO;
 import com.example.spring_server.chat.entity.Conversation;
 import com.example.spring_server.chat.entity.Message;
+import com.example.spring_server.chat.entity.PotentialLead;
 import com.example.spring_server.chat.repository.ConversationRepository;
 import com.example.spring_server.chat.repository.MessageRepository;
+import com.example.spring_server.messenger.service.MessengerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,9 +34,10 @@ public class ChatServiceImpl implements ChatService {
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final MessengerService messengerService;
     
     @Override
-    public ConversationDTO createConversation(Long customerId, String channel) {
+    public ConversationDTO createConversation(String customerId, String channel) {
         Conversation conversation = new Conversation();
         conversation.setCustomerId(customerId);
         conversation.setChannel(channel);
@@ -68,7 +71,7 @@ public class ChatServiceImpl implements ChatService {
     }
     
     @Override
-    public List<ConversationDTO> getConversationsByCustomerId(Long customerId) {
+    public List<ConversationDTO> getConversationsByCustomerId(String customerId) {
         return conversationRepository.findByCustomerId(customerId)
                 .stream()
                 .map(this::entityToDTO)
@@ -104,6 +107,15 @@ public class ChatServiceImpl implements ChatService {
                 
         // Broadcast to the specific conversation room
         messagingTemplate.convertAndSend("/topic/chat/" + conversationId, dto);
+        
+        // --- CHUYỂN TIẾP ĐA KÊNH ---
+        // Nếu là hội thoại Facebook, gửi tin nhắn tới Messenger của khách
+        if ("facebook".equals(conversation.getChannel())) {
+            // senderType != 'user' nghĩa là do Bot hoặc Nhân viên gửi
+            if (!"user".equals(messageDTO.getSenderType())) {
+                messengerService.sendMessage(conversation.getCustomerId(), messageDTO.getContent());
+            }
+        }
         
         return dto;
     }
@@ -195,6 +207,33 @@ public class ChatServiceImpl implements ChatService {
         conversationRepository.delete(conversation);
     }
     
+    @Override
+    public void updateCustomerInfo(Long conversationId, String name, String phone, String email) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation not found: " + conversationId));
+
+        PotentialLead lead = conversation.getPotentialLead();
+        if (lead == null) {
+            lead = PotentialLead.builder()
+                    .conversation(conversation)
+                    .build();
+            conversation.setPotentialLead(lead);
+        }
+
+        if (name != null) lead.setCustomerName(name);
+        if (phone != null) lead.setPhone(phone);
+        if (email != null) lead.setEmail(email);
+
+        conversationRepository.save(conversation);
+
+        // Broadcast update to admin dashboard
+        messagingTemplate.convertAndSend("/topic/admin/conversations",
+                AdminDashboardEvent.builder()
+                        .eventType(AdminDashboardEvent.EventType.CONVERSATION_UPDATED)
+                        .conversation(entityToDTO(conversation))
+                        .build());
+    }
+
     // Helper methods for DTO conversion
     
     private ConversationDTO entityToDTO(Conversation entity) {
@@ -206,6 +245,9 @@ public class ChatServiceImpl implements ChatService {
                 .isBotActive(entity.getIsBotActive())
                 .leadScore(entity.getLeadScore())
                 .intentSummary(entity.getPotentialLead() != null ? entity.getPotentialLead().getIntentSummary() : null)
+                .customerName(entity.getPotentialLead() != null ? entity.getPotentialLead().getCustomerName() : null)
+                .customerPhone(entity.getPotentialLead() != null ? entity.getPotentialLead().getPhone() : null)
+                .customerEmail(entity.getPotentialLead() != null ? entity.getPotentialLead().getEmail() : null)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .lastMessageTime(entity.getMessages().isEmpty() ? 

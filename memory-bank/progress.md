@@ -20,12 +20,15 @@
 - [x] Conversation Entity có quan hệ `@OneToOne` với `PotentialLead`.
 - [x] `ConversationDTO` bao gồm `leadScore`, `intentSummary`, `sentiment`.
 - [x] `ChatServiceImpl.entityToDTO()` map dữ liệu từ `PotentialLead` vào DTO.
+- [x] **[NEW]** Real-time Typing Indicator logic in `ChatWebSocketController`.
 
 ### Orchestrator & AI Module
 - [x] `OrchestratorService`: Tự động phân tích tin nhắn, chấm điểm, kích hoạt Handover.
 - [x] Tích hợp AI thực tế: `gemini-1.5-flash` qua OpenAI bridge (`spring-ai-starter-model-openai`).
 - [x] AI Prompt 3 giai đoạn (Sàng lọc → Tín hiệu → Handover) với điểm nhạy bén (+10/+20/+30/+50).
-- [x] Structured Output: Kết quả AI trả về dạng `AiAnalysisResult` JSON.
+- [x] **[NEW]** Refactor AI Consultant flow: Hỗ trợ 3 trạng thái PRE-LEAD, LEAD DETECTED, POST-LEAD.
+- [x] **[NEW]** Duy trì Bot hoạt động sau thu thập contact để trả lời khách hàng.
+- [x] Structured Output: Kết quả AI trả về dạng `AiAnalysisResult` JSON (đã ép định dạng nghiêm ngặt).
 - [x] Sự kiện `LEAD_SCORE_UPDATED` mang đầy đủ `ConversationDTO` để cập nhật Dashboard Admin realtime.
 - [x] Cơ chế chuyển đổi Mock/Real AI qua `app.ai.use-mock`.
 
@@ -39,16 +42,14 @@
 - [x] `AdminDashboard.jsx`: Giao diện 3 cột (Smart Inbox | Workspace | AI Insights) với Header riêng.
 - [x] Cột AI Insights hiển thị `intentSummary` thật từ AI Backend.
 - [x] Cập nhật điểm 🔥 và trạng thái hội thoại realtime qua STOMP.
+- [x] **[NEW]** Real-time Typing Indicator UI cho cả Khách hàng và Admin.
 - [x] Tính năng Take Over: `isBotActive = false`, mở khóa ô nhập liệu Admin.
 
-### Notification Module (Mới)
-- [x] `NotificationService` interface.
-- [x] `NotificationServiceImpl` — gửi email HTML async qua Gmail SMTP.
-- [x] `LeadNotificationData` DTO.
-- [x] `lead_notification.html` — Thymeleaf email template dark mode premium.
-- [x] `pom.xml`: Thêm `spring-boot-starter-mail` + `spring-boot-starter-thymeleaf`.
-- [x] `@EnableAsync` đầu trong `SpringServerApplication`.
+### Containerization & Infrastructure
+- [x] Dockerfile + Docker Compose cho toàn bộ hệ thống.
+- [x] **[FIX]** WebSocket/CORS issues trong môi trường Docker (port 80).
 - [x] Gmail SMTP config + `app.notification.*` trong `application.yaml`.
+- [x] `@EnableAsync` đầu trong `SpringServerApplication`.
 
 ### Bot Thu Thập Contact
 - [x] V2 Flyway migration: thêm `customer_name`, `phone`, `email`, `contact_collected_at` vào `potential_leads`. Xóa `estimated_value`.
@@ -59,16 +60,19 @@
 
 ### Fix Layout Admin
 - [x] `AdminDashboard.jsx`: 3 cột không còn bị kéo dài theo cột cao nhất (`h-screen` + `calc(100vh - 73px)`).
+- [x] Đổi tên nhãn "Cần Chăm Sóc" thành "Manual".
+- [x] Bộ lọc kênh hội thoại (Web/Facebook) trên Frontend.
+- [x] Hiển thị tên khách hàng thật trên Admin Dashboard (thu thập từ PotentialLead).
+- [x] **[FIX]** Sửa lỗi crash màn hình do thiếu `messagesEndRef` trong `ChatWindow.jsx`.
 
 - [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
 
 ## Những Việc Cần Làm Tiếp Theo (What's Left to Build)
 
 ### Phát Triển (Development)
-- [ ] **Security Module**: JWT Authentication, phân quyền Admin/Agent endpoint.
-- [ ] **Test E2E email**: Xác nhận Gmail App Password, nhận email đúng format.
-- [ ] **Flyway V2**: Đã có sẵn, chạy lần đầu sẽ tự apply.
-- [ ] **Đa kênh**: Tích hợp Zalo, Facebook Messenger vào hệ thống routing.
+- [ ] **Security Module**: Đang thiết kế (JWT, authentication, authorization).
+- [x] **Đa kênh**: Tích hợp Facebook Messenger (Webhook + Send API) đã hoạt động.
+- [x] **Refactor Data**: `customerId` chuyển sang `String` (Flyway V3) hỗ trợ PSID.
 - [ ] **Thống kê**: Dashboard tổng hợp số liệu (Lead mới/ngày, tỷ lệ chuyển đổi, v.v.).
 
 ### Kiểm Thử (Testing)
@@ -76,9 +80,10 @@
 - [ ] Đánh giá tốc độ phản hồi AI thực tế.
 - [ ] Test stress: Nhiều hội thoại đồng thời.
 
-## Commits Quan Trọng
 | Commit | Mô tả |
 |--------|--------|
+| `e4bd023` | feat(admin): improve customer naming, fix Messenger profile fetching and switch to gemini-lite |
+| `8fc3dd6` | feat(chanel): integrate messenger |
 | `78a2f71` | feat: bot auto-collect contact info & email notification to agent |
 | `c97c860` | feat: real-time lead scoring, landing page with chat widget, fix JSX errors |
 | `33f6b64` | feat: optimize AI prompt for complaint handling |

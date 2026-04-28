@@ -1,49 +1,50 @@
 # Ngữ Cảnh Hiện Tại (Active Context)
 
 ## Trạng Thái Dự Án
-Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP với đầy đủ tính năng: Landing Page, Chat Widget, AI Lead Scoring realtime, Admin Dashboard, Handover, và tính năng mới **Bot tự thu thập thông tin liên hệ + gửi email thông báo nhân viên**.
+Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải qua đợt refactor lớn về luồng chat (Chat Flow) để tối ưu hóa trải nghiệm khách hàng theo phong cách "AI Consultant". Hệ thống đã được cấu hình chạy ổn định trên Docker với đầy đủ các bản vá lỗi WebSocket/CORS.
 
-- Commit mới nhất: `78a2f71`.
-- Backend hoạt động ổn định với REST + WebSocket STOMP + Email Notification.
-- Admin Dashboard đã fix lỗi layout 3 cột bị kéo dài theo nội dung.
+- Commit mới nhất: `e4bd023`.
+- Backend: Đã tích hợp AI Prompt 3 giai đoạn (PRE-LEAD, LEAD DETECTED, POST-LEAD).
+- Docker: Đã cấu hình CORS cho phép origin `http://localhost`.
 
 ## Công Việc Đã Hoàn Thành Trong Phiên Này
 
-### Tính Năng Mới: Bot Thu Thập Contact & Email Thông Báo
-- **✅ V2 Flyway Migration**: Thêm 4 cột vào `potential_leads`: `customer_name`, `phone`, `email`, `contact_collected_at`. Xóa `estimated_value`.
-- **✅ PotentialLead entity**: Bổ sung 4 field tương ứng (`customerName`, `phone`, `email`, `contactCollectedAt`).
-- **✅ Notification Module**: Tạo mới package `notification/` gồm:
-  - `NotificationService` (interface)
-  - `NotificationServiceImpl` — gửi email async qua Gmail SMTP + Thymeleaf
-  - `LeadNotificationData` DTO
-  - `lead_notification.html` — email template dark mode premium (Lead Score badge, info grid, AI intent, CTA button)
-- **✅ OrchestratorServiceImpl**: Refactor toàn bộ với 3 luồng xử lý:
-  1. Nhận tin nhắn `[CONTACT]` từ mini-form → parse, lưu DB, gửi email, handover
-  2. Text tự do trong trạng thái `COLLECTING_CONTACT` → regex parse SĐT/email
-  3. Luồng AI bình thường → khi score ≥ 50 hoặc intent = handover → yêu cầu contact
-- **✅ `COLLECTING_CONTACT` status**: Trạng thái mới giữa ACTIVE và HANDED_OVER.
-- **✅ `pom.xml`**: Thêm `spring-boot-starter-mail` và `spring-boot-starter-thymeleaf`.
-- **✅ `application.yaml`**: Thêm Gmail SMTP config (`spring.mail.*`) và `app.notification.*`.
-- **✅ `@EnableAsync`**: Thêm vào `SpringServerApplication` để `@Async` hoạt động.
-- **✅ `ChatWindow.jsx`**: Thêm mini contact form (Tên, SĐT, Email) hiển thị khi nhận `senderType = collect_contact` từ bot. Submit gửi message với prefix `[CONTACT]`.
+### Refactor Chat Flow & AI Logic (Mới)
+- **✅ AI Prompt 3 Giai Đoạn**: Tích hợp luồng tư vấn chuyên nghiệp vào `OpenAiScoringClientImpl.java`.
+  - `PRE-LEAD`: Khai thác nhu cầu, đặt câu hỏi thông minh.
+  - `LEAD DETECTED`: Khuyến khích để lại contact, tránh báo giá chi tiết.
+  - `POST-LEAD`: Xác nhận ghi nhận, thông báo liên hệ sau, dừng tư vấn sâu.
+- **✅ Duy trì Bot hoạt động**: Refactor `OrchestratorServiceImpl` để bot không tự tắt ngay khi có contact. Bot đóng vai trò "gatekeeper" cho đến khi Agent thực sự Take Over.
+- **✅ Sửa lỗi Race Condition**: Trích xuất SĐT/Email ngay đầu luồng xử lý để AI không hỏi lại thông tin vừa mới cung cấp.
+- **✅ Ổn định AI Response**: Ép định dạng JSON nghiêm ngặt và sửa lỗi ghi đè System Prompt khi truyền tham số.
+- **✅ Typing Indicator**: Triển khai tính năng "đang nhập" (Real-time Typing) cho Khách hàng, Bot và Nhân viên.
+- **✅ Facebook Messenger**: Hoàn tất tích hợp Webhook, Send API & Profile API (tự động lấy tên Facebook khách hàng).
+- **✅ Refactor customerId**: Chuyển đổi `customerId` từ `Long` sang `String` trên toàn hệ thống để hỗ trợ các bên thứ ba (PSID).
+- **✅ Tối ưu AI Model**: Chuyển đổi sang `gemini-2.5-flash-lite` để tăng tốc độ phản hồi và tiết kiệm tài nguyên.
+- **✅ Bug Fix**: Sửa lỗi `ReferenceError: messagesEndRef` và lỗi cú pháp trong `MessengerService`.
+
+### Docker & WebSocket Fixes
+- **✅ CORS Configuration**: Cập nhật `CorsConfig.java` và `WebSocketConfig.java` cho phép origin `http://localhost` (dành cho Docker deployment trên port 80).
 
 ### Fix Layout Admin Dashboard
 - **✅ `AdminDashboard.jsx`**: Đổi outer div từ `min-h-screen` → `h-screen overflow-hidden`. Grid container dùng `height: calc(100vh - 73px)` thay vì `flex-1` → 3 cột không còn bị kéo dài theo cột cao nhất.
+- **✅ Label Renaming**: Đổi tên nhãn "Cần Chăm Sóc" thành "Manual" để chuyên nghiệp hơn.
+- **✅ Customer Naming**: Hiển thị tên thật của khách hàng (thu thập từ Bot) trên Admin Dashboard thay vì chỉ hiển thị mã ID.
+- **✅ Channel Filter**: Triển khai bộ lọc kênh (All, Web, Facebook) trên Frontend của trang Admin.
 
 ### Containerization (Docker)
 - **✅ Dockerfile**: Tạo Dockerfile cho cả `spring-server` và `client`.
-- **✅ docker-compose.yml**: Thiết lập orchestration cho toàn bộ hệ thống (DB, Backend, Frontend).
+- **✅ docker-compose.yml**: Thiết lập orchestration và ánh xạ đầy đủ biến môi trường (Gemini, Mail, Facebook) cho Backend.
 - **✅ Biến môi trường**: Chuyển cấu hình sang `.env` để quản lý tập trung cho Docker.
 
 ## Các Quyết Định Quan Trọng
-- **Prefix `[CONTACT]`**: Dùng prefix có cấu trúc thay vì NLP để parse nhanh, chắc chắn, không phụ thuộc AI.
-- **Gửi email dù online hay offline**: Email luôn được gửi khi có lead — song song với STOMP realtime cho Admin online.
-- **Email chạy `@Async`**: Không block luồng chat chính, khách nhận phản hồi ngay lập tức.
-- **Gmail App Password**: Cần env var `MAIL_USERNAME`, `MAIL_PASSWORD`, `AGENT_EMAIL`.
-- **Admin layout fixed**: `h-screen` + `calc(100vh - 73px)` cho grid để 3 cột cuộn độc lập nhau.
+- **Triết lý AI Consultant**: Bot là người sàng lọc và làm nóng lead, không thay thế con người chốt deal.
+- **Cấu trúc Prompt tập trung**: Sử dụng biến hằng số `SYSTEM_PROMPT_TEMPLATE` để tránh lỗi ghi đè instruction của Spring AI.
+- **Giữ Bot Active (POST-LEAD)**: Quyết định không tắt bot ngay lập tức sau khi có contact để bot xử lý các câu hỏi "bao giờ gọi lại", "cảm ơn" của khách.
+- **Cấu hình Docker port 80**: Thống nhất dùng `http://localhost` không port làm origin chính cho môi trường deploy.
+- **Multi-Subscription WebSocket**: Refactor `chatService.js` để hỗ trợ Admin vừa nhận update hệ thống vừa nhận event chi tiết trong hội thoại (typing).
 
 ## Bước Tiếp Theo
-1. **Security Module**: JWT Authentication, phân quyền Admin/Agent endpoint.
-2. **Test E2E email**: Xác nhận Gmail App Password hoạt động, nhận email đúng format.
-3. **Nhiều nhân viên nhận mail**: Mở rộng `AGENT_EMAIL` thành danh sách nếu cần.
-4. **Flyway**: Đã có V2 migration, chạy lần đầu sẽ tự apply.
+1. **Security Module**: Triển khai JWT và phân quyền Admin.
+2. **Dashboard Thống kê**: Vẽ biểu đồ chuyển đổi lead.
+3. **Kiểm thử Edge Cases**: Test luồng AI khi khách hàng thay đổi ý định hoặc cung cấp thông tin sai.

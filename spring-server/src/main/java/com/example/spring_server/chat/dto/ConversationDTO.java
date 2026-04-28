@@ -19,13 +19,16 @@ import java.time.LocalDateTime;
 @Builder
 public class ConversationDTO {
     private Long id;
-    private Long customerId;
+    private String customerId;
     private String channel;
     private String status;
     private Boolean isBotActive;
     private Integer leadScore;
     private String intentSummary;
     private String sentiment;
+    private String customerName;
+    private String customerPhone;
+    private String customerEmail;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastMessageTime;

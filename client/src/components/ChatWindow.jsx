@@ -12,6 +12,9 @@ export default function ChatWindow({ isWidget = false }) {
   const [contactForm, setContactForm] = useState({ name: '', phone: '', email: '' });
   const messagesEndRef = useRef(null);
   const initialized = useRef(false);
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
+  const lastTypingSentRef = useRef(0);
 
   // Khởi tạo hội thoại
   useEffect(() => {
@@ -55,7 +58,15 @@ export default function ChatWindow({ isWidget = false }) {
         return;
       }
 
-      // Nếu senderType = collect_contact → kích hoạt mini-form
+      if (msg.eventType === 'TYPING_INDICATOR') {
+        // Only show if it's from bot or agent (not self)
+        if (msg.senderType !== 'user') {
+          setIsOtherTyping(msg.content === 'typing');
+        }
+        return;
+      }
+
+      // If senderType = collect_contact → kích hoạt mini-form
       if (msg.senderType === 'collect_contact') {
         const newMsg = {
           id: msg.id || Date.now(),
@@ -66,6 +77,7 @@ export default function ChatWindow({ isWidget = false }) {
         };
         setMessages(prev => prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]);
         setCollectingContact(true);
+        setIsOtherTyping(false); // Hide typing when form appears
         return;
       }
 
@@ -77,20 +89,48 @@ export default function ChatWindow({ isWidget = false }) {
         timestamp: new Date().toLocaleTimeString()
       };
       setMessages(prev => prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]);
+      setIsOtherTyping(false); // Hide typing when message arrives
     });
     return () => chatService.clearListeners();
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isOtherTyping]);
 
   // Gửi tin nhắn thường
   const handleSend = (e) => {
     e.preventDefault();
     if (!inputValue.trim() || !conversationId) return;
+    
+    // Clear typing indicator immediately
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    chatService.sendTypingIndicator(conversationId, 'Khách hàng', 'user', false);
+    lastTypingSentRef.current = 0;
+
     chatService.sendWebSocketMessage(conversationId, 'Khách hàng', 'user', inputValue);
     setInputValue('');
+  };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setInputValue(value);
+
+    if (conversationId && connected) {
+      const now = Date.now();
+      // Throttle typing events: send every 3 seconds while typing
+      if (now - lastTypingSentRef.current > 3000) {
+        chatService.sendTypingIndicator(conversationId, 'Khách hàng', 'user', true);
+        lastTypingSentRef.current = now;
+      }
+
+      // Clear previous timeout and set a new one to send "stop typing"
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        chatService.sendTypingIndicator(conversationId, 'Khách hàng', 'user', false);
+        lastTypingSentRef.current = 0;
+      }, 3000);
+    }
   };
 
   // Submit mini contact form
@@ -167,6 +207,19 @@ export default function ChatWindow({ isWidget = false }) {
             </div>
           ))
         )}
+
+        {/* Typing indicator */}
+        {isOtherTyping && (
+          <div className="flex justify-start">
+            <div className="bg-slate-800 border border-white/10 rounded-2xl rounded-tl-none px-4 py-3 shadow-lg">
+              <div className="flex gap-1">
+                <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></div>
+              </div>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -222,7 +275,7 @@ export default function ChatWindow({ isWidget = false }) {
             <input
               type="text"
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={handleInputChange}
               placeholder="Nhập tin nhắn..."
               className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:border-cyan-400 outline-none"
             />

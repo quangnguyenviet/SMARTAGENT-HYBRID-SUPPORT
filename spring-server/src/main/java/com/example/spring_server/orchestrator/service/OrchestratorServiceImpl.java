@@ -65,6 +65,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     @Transactional
     public void processUserMessage(Long conversationId, String content) {
         log.info("Orchestrator bắt đầu xử lý tin nhắn cho hội thoại: {}", conversationId);
+        
+        // Bật chỉ báo typing cho Bot
+        sendBotTyping(conversationId, true);
 
         Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
         if (conversation == null) {
@@ -95,22 +98,32 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             return;
         }
 
+        // Cập nhật hoặc tạo PotentialLead
+        PotentialLead lead = potentialLeadRepository.findByConversationId(conversationId)
+                .orElse(PotentialLead.builder().conversation(conversation).build());
+
+        // Kiểm tra thông tin liên hệ từ database
+        boolean hasContactInfoInDb = lead.getPhone() != null || lead.getEmail() != null;
+        
+        // KIỂM TRA THÊM: Trích xuất nhanh từ tin nhắn hiện tại (tránh việc AI hỏi lại khi khách vừa cung cấp)
+        boolean hasContactInCurrentMessage = PHONE_PATTERN.matcher(content).find() || EMAIL_PATTERN.matcher(content).find();
+        
+        boolean hasContactInfo = hasContactInfoInDb || hasContactInCurrentMessage;
+
         // Lấy lịch sử tin nhắn để làm ngữ cảnh cho AI
         List<String> history = messageRepository.findByConversationIdOrderByTimestampAsc(conversationId).stream()
                 .map(m -> m.getSenderType() + ": " + m.getContent())
                 .collect(Collectors.toList());
 
-        // Gọi AI phân tích
-        AiAnalysisResult analysis = aiScoringClient.analyzeMessage(content, history);
+        // Gọi AI phân tích (Truyền thêm trạng thái Lead)
+        AiAnalysisResult analysis = aiScoringClient.analyzeMessage(content, history, hasContactInfo);
 
         // Cập nhật Lead Score
         int currentScore = conversation.getLeadScore() != null ? conversation.getLeadScore() : 0;
         int newScore = currentScore + analysis.getScoreIncrement();
         conversation.setLeadScore(newScore);
 
-        // Cập nhật hoặc tạo PotentialLead
-        PotentialLead lead = potentialLeadRepository.findByConversationId(conversationId)
-                .orElse(PotentialLead.builder().conversation(conversation).build());
+        // Cập nhật hoặc tạo PotentialLead (đã lấy ở trên)
 
         if (analysis.getIntent() != null && !analysis.getIntent().equals("neutral")) {
             lead.setIntentSummary(analysis.getIntent());
@@ -130,14 +143,11 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             log.info("🎯 Phát hiện khách tiềm năng tại hội thoại {}. Score: {}. Intent: {}",
                     conversationId, newScore, analysis.getIntent());
 
-            // Kiểm tra đã thu thập thông tin liên hệ chưa
-            boolean hasContactInfo = lead.getPhone() != null || lead.getEmail() != null;
-
             if (!hasContactInfo) {
                 // Chưa có thông tin → Bot hỏi xin thông tin liên hệ
                 requestContactInfo(conversationId, conversation, analysis);
             } else {
-                // Đã có thông tin → Handover bình thường + gửi email ngay
+                // Đã có thông tin → Chuyển trạng thái Handover + gửi email (Bot vẫn hoạt động)
                 triggerHandoverWithNotification(conversationId, conversation, lead, analysis, newScore);
             }
 
@@ -175,8 +185,8 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         lead.setContactCollectedAt(LocalDateTime.now());
         potentialLeadRepository.save(lead);
 
-        // Chuyển trạng thái sang HANDED_OVER, tắt bot
-        conversation.setIsBotActive(false);
+        // Chuyển trạng thái sang HANDED_OVER, NHƯNG giữ bot active để trả lời POST-LEAD
+        // conversation.setIsBotActive(false); // Xóa dòng này
         conversationRepository.save(conversation);
         chatService.updateConversationStatus(conversationId, "HANDED_OVER");
 
@@ -226,7 +236,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
         // Nếu đã có ít nhất 1 thông tin (SĐT hoặc email) → trigger handover
         if (lead.getPhone() != null || lead.getEmail() != null) {
-            conversation.setIsBotActive(false);
+            // conversation.setIsBotActive(false); // Giữ bot active cho POST-LEAD
             conversationRepository.save(conversation);
             chatService.updateConversationStatus(conversationId, "HANDED_OVER");
 
@@ -272,7 +282,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
      */
     private void triggerHandoverWithNotification(Long conversationId, Conversation conversation,
                                                   PotentialLead lead, AiAnalysisResult analysis, int newScore) {
-        conversation.setIsBotActive(false);
+        // conversation.setIsBotActive(false); // Giữ bot active
         conversationRepository.save(conversation);
         chatService.updateConversationStatus(conversationId, "HANDED_OVER");
 
@@ -342,12 +352,34 @@ public class OrchestratorServiceImpl implements OrchestratorService {
      */
     private void sendBotReply(Long conversationId, String content) {
         if (content == null || content.isBlank()) return;
+        
+        // Tắt typing trước khi gửi tin nhắn
+        sendBotTyping(conversationId, false);
+
         MessageDTO botReply = MessageDTO.builder()
                 .sender("AI Assistant")
                 .senderType("bot")
                 .content(content)
                 .build();
         chatService.sendMessage(conversationId, botReply);
+    }
+
+    /**
+     * Gửi trạng thái typing của Bot qua WebSocket
+     */
+    private void sendBotTyping(Long conversationId, boolean isTyping) {
+        try {
+            messagingTemplate.convertAndSend("/topic/chat/" + conversationId,
+                    com.example.spring_server.chat.dto.WebSocketMessageDTO.builder()
+                            .eventType("TYPING_INDICATOR")
+                            .conversationId(conversationId)
+                            .sender("AI Assistant")
+                            .senderType("bot")
+                            .content(isTyping ? "typing" : "stopped")
+                            .build());
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi bot typing indicator: {}", e.getMessage());
+        }
     }
 
     /**
@@ -375,6 +407,6 @@ public class OrchestratorServiceImpl implements OrchestratorService {
      * Kiểm tra trạng thái có hợp lệ để bot xử lý không
      */
     private boolean isActiveStatus(String status) {
-        return "ACTIVE".equals(status) || "COLLECTING_CONTACT".equals(status);
+        return "ACTIVE".equals(status) || "COLLECTING_CONTACT".equals(status) || "HANDED_OVER".equals(status);
     }
 }

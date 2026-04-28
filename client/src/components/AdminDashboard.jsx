@@ -24,8 +24,12 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [inboxTab, setInboxTab] = useState('care'); // 'care' | 'all'
+  const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'web' | 'facebook'
   const selectedConversationIdRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const [isCustomerTyping, setIsCustomerTyping] = useState(false);
+  const adminTypingTimeoutRef = useRef(null);
+  const lastAdminTypingSentRef = useRef(0);
 
   const selectedConversation = useMemo(
     () => conversations.find((item) => item.id === selectedConversationId) || null,
@@ -42,7 +46,15 @@ export default function AdminDashboard() {
     [conversations]
   );
 
-  const filteredConversations = inboxTab === 'care' ? needsCareConversations : conversations;
+  const filteredConversations = useMemo(() => {
+    let base = inboxTab === 'care' ? needsCareConversations : conversations;
+    
+    if (channelFilter !== 'all') {
+      base = base.filter(c => (c.channel || 'web').toLowerCase() === channelFilter);
+    }
+    
+    return base;
+  }, [inboxTab, needsCareConversations, conversations, channelFilter]);
 
 
   useEffect(() => {
@@ -51,9 +63,22 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     selectedConversationIdRef.current = selectedConversationId;
+    setIsCustomerTyping(false); // Reset typing status when conversation changes
+
     if (selectedConversationId) {
       loadMessages(selectedConversationId);
+      
+      // Subscribe to specific conversation for real-time events like TYPING
+      chatService.subscribeToConversation(selectedConversationId, (msg) => {
+        if (msg.eventType === 'TYPING_INDICATOR') {
+          if (msg.senderType === 'user') {
+            setIsCustomerTyping(msg.content === 'typing');
+          }
+        }
+      });
     }
+
+    return () => chatService.unsubscribeFromConversation();
   }, [selectedConversationId]);
 
   // Scroll to bottom when new messages arrive
@@ -160,8 +185,6 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation) return;
 
-    console.log("Admin sending message:", newMessage);
-    
     // Gửi tin nhắn admin qua WebSocket
     // Chúng ta giả định agentId = 1 (Nhân viên)
     chatService.sendWebSocketMessage(
@@ -171,7 +194,31 @@ export default function AdminDashboard() {
       newMessage
     );
 
+    // Stop typing indicator
+    if (adminTypingTimeoutRef.current) clearTimeout(adminTypingTimeoutRef.current);
+    chatService.sendTypingIndicator(selectedConversation.id, "Nhân viên hỗ trợ", "agent", false);
+    lastAdminTypingSentRef.current = 0;
+
     setNewMessage('');
+  };
+
+  const handleAdminInputChange = (e) => {
+    const value = e.target.value;
+    setNewMessage(value);
+
+    if (selectedConversationId && chatService.isConnected()) {
+      const now = Date.now();
+      if (now - lastAdminTypingSentRef.current > 3000) {
+        chatService.sendTypingIndicator(selectedConversationId, "Nhân viên hỗ trợ", "agent", true);
+        lastAdminTypingSentRef.current = now;
+      }
+
+      if (adminTypingTimeoutRef.current) clearTimeout(adminTypingTimeoutRef.current);
+      adminTypingTimeoutRef.current = setTimeout(() => {
+        chatService.sendTypingIndicator(selectedConversationId, "Nhân viên hỗ trợ", "agent", false);
+        lastAdminTypingSentRef.current = 0;
+      }, 3000);
+    }
   };
 
   return (
@@ -219,7 +266,7 @@ export default function AdminDashboard() {
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Cần Chăm Sóc
+                Manual
                 {needsCareConversations.length > 0 && (
                   <span className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
                     inboxTab === 'care' ? 'bg-rose-500 text-white' : 'bg-slate-700 text-slate-300'
@@ -244,6 +291,29 @@ export default function AdminDashboard() {
                 </span>
               </button>
             </div>
+            
+            {/* Channel Filter Bar */}
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 bg-white/[0.02]">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mr-1">Lọc theo:</span>
+              <button 
+                onClick={() => setChannelFilter('all')}
+                className={`px-2 py-1 rounded-md text-[10px] font-bold transition ${channelFilter === 'all' ? 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/50' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                Tất cả
+              </button>
+              <button 
+                onClick={() => setChannelFilter('web')}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold transition ${channelFilter === 'web' ? 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/50' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                <span>🌐</span> Web
+              </button>
+              <button 
+                onClick={() => setChannelFilter('facebook')}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold transition ${channelFilter === 'facebook' ? 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/50' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                <span>💬</span> FB
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3">
@@ -254,7 +324,7 @@ export default function AdminDashboard() {
                 {inboxTab === 'care' ? (
                   <>
                     <div className="text-2xl mb-2">✅</div>
-                    <p>Không có khách cần chăm sóc!</p>
+                    <p>Không có khách cần Manual!</p>
                   </>
                 ) : 'Chưa có hội thoại nào.'}
               </div>
@@ -277,10 +347,12 @@ export default function AdminDashboard() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-white">Khách hàng #{conversation.customerId}</span>
+                          <span className="text-sm font-bold text-white">
+                            {conversation.customerName || `Khách hàng #${conversation.customerId} (${conversation.channel || 'Web'})`}
+                          </span>
                           <div className="mt-1 flex items-center gap-2">
                             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${botActive ? 'bg-blue-500/20 text-blue-300' : 'bg-rose-500/20 text-rose-300 border border-rose-500/50 animate-pulse'}`}>
-                              {botActive ? '🤖 Bot Auto' : '👩‍💼 Cần Chăm Sóc'}
+                              {botActive ? '🤖 Bot Auto' : '👩‍💼 Manual'}
                             </span>
                           </div>
                         </div>
@@ -311,7 +383,9 @@ export default function AdminDashboard() {
             <div>
               <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Workspace</p>
               <h2 className="text-lg font-semibold text-white">
-                {selectedConversation ? `Hội thoại #${selectedConversation.id}` : 'Chưa chọn hội thoại'}
+                {selectedConversation 
+                  ? (selectedConversation.customerName || `Khách hàng #${selectedConversation.customerId} (${selectedConversation.channel || 'Web'})`)
+                  : 'Chưa chọn hội thoại'}
               </h2>
             </div>
             
@@ -359,6 +433,19 @@ export default function AdminDashboard() {
                     </div>
                   );
                 })}
+                
+                {/* Customer typing indicator */}
+                {isCustomerTyping && (
+                  <div className="flex justify-start">
+                    <div className="bg-slate-800 border border-white/10 rounded-2xl rounded-tl-none px-4 py-3 shadow-lg">
+                      <div className="flex gap-1">
+                        <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                        <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </>
             )}
@@ -371,7 +458,7 @@ export default function AdminDashboard() {
                 <input
                   type="text"
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={handleAdminInputChange}
                   placeholder={selectedConversation.isBotActive !== false ? "Vui lòng bấm 'TAKE OVER' để nhắn tin..." : "Nhập tin nhắn hỗ trợ khách hàng..."}
                   disabled={selectedConversation.isBotActive !== false}
                   className="w-full rounded-2xl border border-white/10 bg-slate-800/50 py-3 pl-4 pr-12 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"

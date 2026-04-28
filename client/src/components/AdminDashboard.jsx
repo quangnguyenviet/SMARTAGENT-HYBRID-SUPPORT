@@ -25,6 +25,7 @@ export default function AdminDashboard() {
   const [newMessage, setNewMessage] = useState('');
   const [inboxTab, setInboxTab] = useState('care'); // 'care' | 'all'
   const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'web' | 'facebook'
+  const [searchQuery, setSearchQuery] = useState(''); // Demo Search
   const selectedConversationIdRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [isCustomerTyping, setIsCustomerTyping] = useState(false);
@@ -53,8 +54,16 @@ export default function AdminDashboard() {
       base = base.filter(c => (c.channel || 'web').toLowerCase() === channelFilter);
     }
     
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      base = base.filter(c => 
+        (c.customerName && c.customerName.toLowerCase().includes(q)) || 
+        (c.customerId && c.customerId.toLowerCase().includes(q))
+      );
+    }
+    
     return base;
-  }, [inboxTab, needsCareConversations, conversations, channelFilter]);
+  }, [inboxTab, needsCareConversations, conversations, channelFilter, searchQuery]);
 
 
   useEffect(() => {
@@ -254,6 +263,22 @@ export default function AdminDashboard() {
               >
                 Làm mới
               </button>
+            </div>
+
+            {/* DEMO SEARCH BAR */}
+            <div className="px-5 mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm tên hoặc mã khách..."
+                  className="w-full rounded-xl border border-white/10 bg-white/5 py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                />
+                <svg className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
             </div>
 
             {/* Tabs */}

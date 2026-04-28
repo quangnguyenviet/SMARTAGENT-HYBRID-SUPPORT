@@ -21,6 +21,7 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 - **✅ Facebook Messenger**: Hoàn tất tích hợp Webhook, Send API & Profile API (tự động lấy tên Facebook khách hàng).
 - **✅ Refactor customerId**: Chuyển đổi `customerId` từ `Long` sang `String` trên toàn hệ thống để hỗ trợ các bên thứ ba (PSID).
 - **✅ Tối ưu AI Model**: Chuyển đổi sang `gemini-2.5-flash-lite` để tăng tốc độ phản hồi và tiết kiệm tài nguyên.
+- **✅ Lead Notification Fix**: Sửa lỗi gửi trùng email thông báo cho Agent bằng cách bổ sung cờ `isLeadNotified`.
 - **✅ Bug Fix**: Sửa lỗi `ReferenceError: messagesEndRef` và lỗi cú pháp trong `MessengerService`.
 
 ### Docker & WebSocket Fixes

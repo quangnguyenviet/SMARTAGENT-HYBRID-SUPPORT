@@ -63,6 +63,7 @@
 - [x] Đổi tên nhãn "Cần Chăm Sóc" thành "Manual".
 - [x] Bộ lọc kênh hội thoại (Web/Facebook) trên Frontend.
 - [x] Hiển thị tên khách hàng thật trên Admin Dashboard (thu thập từ PotentialLead).
+- [x] **[FIX]** Sửa lỗi gửi trùng email Lead (Sử dụng cờ `isLeadNotified`).
 - [x] **[FIX]** Sửa lỗi crash màn hình do thiếu `messagesEndRef` trong `ChatWindow.jsx`.
 
 - [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).

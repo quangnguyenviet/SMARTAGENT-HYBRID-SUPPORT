@@ -194,8 +194,10 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         String confirmMsg = buildConfirmMessage(lead);
         sendBotReply(conversationId, confirmMsg);
 
-        // Gửi email thông báo cho nhân viên
-        sendLeadEmail(lead, conversation);
+        // Gửi email thông báo cho nhân viên (chỉ gửi 1 lần)
+        if (!Boolean.TRUE.equals(lead.getIsLeadNotified())) {
+            sendLeadEmail(lead, conversation);
+        }
 
         // Broadcast Admin Dashboard
         broadcastScoreUpdate(conversationId);
@@ -242,7 +244,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
             String confirmMsg = buildConfirmMessage(lead);
             sendBotReply(conversationId, confirmMsg);
-            sendLeadEmail(lead, conversation);
+            if (!Boolean.TRUE.equals(lead.getIsLeadNotified())) {
+                sendLeadEmail(lead, conversation);
+            }
             broadcastScoreUpdate(conversationId);
         } else {
             // Chưa nhận diện được → hỏi lại
@@ -291,8 +295,10 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 : "Hệ thống đang kết nối bạn với nhân viên tư vấn. Vui lòng chờ trong giây lát! 🙏";
         sendBotReply(conversationId, handoverMsg);
 
-        // Gửi email thông báo
-        sendLeadEmail(lead, conversation);
+        // Gửi email thông báo (chỉ gửi 1 lần)
+        if (!Boolean.TRUE.equals(lead.getIsLeadNotified())) {
+            sendLeadEmail(lead, conversation);
+        }
         broadcastScoreUpdate(conversationId);
     }
 
@@ -333,6 +339,10 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 .build();
 
         notificationService.sendLeadNotification(notificationData);
+        
+        // Đánh dấu đã thông báo để không gửi trùng lặp
+        lead.setIsLeadNotified(true);
+        potentialLeadRepository.save(lead);
     }
 
 

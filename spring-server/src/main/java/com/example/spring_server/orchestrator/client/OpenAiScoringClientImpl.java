@@ -1,6 +1,7 @@
 package com.example.spring_server.orchestrator.client;
 
 import com.example.spring_server.orchestrator.dto.AiAnalysisResult;
+import com.example.spring_server.settings.service.BotSettingsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,13 +21,10 @@ import java.util.List;
 public class OpenAiScoringClientImpl implements AiScoringClient {
 
     private final ChatClient chatClient;
-
-    @Value("${app.ai.business-context}")
-    private String businessContext;
+    private final BotSettingsService botSettingsService;
 
     private static final String SYSTEM_PROMPT_TEMPLATE = """
-            Bạn là một AI Consultant chuyên nghiệp cho công ty phần mềm SmartAgent.
-            Ngữ cảnh doanh nghiệp: {businessContext}
+            Ngữ cảnh: {businessContext}
             
             =====================
             NGUYÊN TẮC QUAN TRỌNG
@@ -99,8 +97,9 @@ public class OpenAiScoringClientImpl implements AiScoringClient {
             YÊU CẦU ĐỊNH DẠNG: Trả về JSON khớp với class AiAnalysisResult (reply, intent, sentiment, scoreIncrement, customerName, phone, email).
             """;
 
-    public OpenAiScoringClientImpl(ChatClient.Builder builder) {
+    public OpenAiScoringClientImpl(ChatClient.Builder builder, BotSettingsService botSettingsService) {
         this.chatClient = builder.build();
+        this.botSettingsService = botSettingsService;
     }
 
     @Override
@@ -113,7 +112,7 @@ public class OpenAiScoringClientImpl implements AiScoringClient {
         try {
             return chatClient.prompt()
                     .system(s -> s.text(SYSTEM_PROMPT_TEMPLATE + "\\n\\nQUAN TRỌNG: Chỉ trả về mã JSON nguyên bản, không có thẻ ```json, không có văn bản giải thích trước hoặc sau JSON.")
-                                 .param("businessContext", businessContext))
+                                 .param("businessContext", botSettingsService.getSettings().getBusinessPrompt()))
                     .user(u -> u
                             .text("""
                                 Trạng thái hội thoại hiện tại: {leadStatusHint}
@@ -158,7 +157,7 @@ public class OpenAiScoringClientImpl implements AiScoringClient {
         try {
             return chatClient.prompt()
                     .system(s -> s.text("Bạn là một AI Consultant cho SmartAgent. Ngữ cảnh: {businessContext}")
-                                 .param("businessContext", businessContext))
+                                 .param("businessContext", botSettingsService.getSettings().getBusinessPrompt()))
                     .user(u -> u
                             .text("""
                                 Dưới đây là toàn bộ hội thoại giữa bot và khách hàng:

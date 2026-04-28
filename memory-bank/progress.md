@@ -78,6 +78,8 @@
 - [x] **[NEW]** Quy tắc "Một câu hỏi": AI chỉ hỏi 1 ý mỗi lần chat để tối ưu trải nghiệm.
 - [x] **[NEW]** Tư vấn chuyên sâu: Điều chỉnh Prompt để AI kiên nhẫn hơn, không xin SĐT quá sớm.
 - [x] **[FIX]** Sửa lỗi "Double Message" khi xin thông tin liên hệ.
+- [x] **[NEW] Bot Configuration UI**: Cho phép Admin tùy chỉnh Business Prompt và Handover Score động từ Dashboard.
+- [x] **[NEW] Dynamic Orchestration**: Backend tự động áp dụng cấu hình mới nhất cho mỗi tin nhắn (có Cache tối ưu).
 
 - [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import chatService from '../services/chatService';
 
 function formatDate(value) {
@@ -253,9 +254,17 @@ export default function AdminDashboard() {
             <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/80">SmartAgent Admin</p>
             <h1 className="text-xl font-semibold text-white">Hybrid Support Console</h1>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-            <span className="text-sm font-medium text-emerald-400">Hệ thống sẵn sàng</span>
+          <div className="flex items-center gap-6">
+            <Link 
+              to="/admin/settings"
+              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+            >
+              <span>⚙️</span> Cấu hình Bot
+            </Link>
+            <div className="flex items-center gap-4">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+              <span className="text-sm font-medium text-emerald-400">Hệ thống sẵn sàng</span>
+            </div>
           </div>
         </div>
       </header>

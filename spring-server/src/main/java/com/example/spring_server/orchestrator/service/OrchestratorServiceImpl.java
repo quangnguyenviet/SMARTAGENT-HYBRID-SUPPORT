@@ -12,6 +12,7 @@ import com.example.spring_server.notification.dto.LeadNotificationData;
 import com.example.spring_server.notification.service.NotificationService;
 import com.example.spring_server.orchestrator.client.AiScoringClient;
 import com.example.spring_server.orchestrator.dto.AiAnalysisResult;
+import com.example.spring_server.settings.service.BotSettingsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,12 +39,10 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     private final AiScoringClient aiScoringClient;
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationService notificationService;
+    private final BotSettingsService botSettingsService;
 
     @Value("${app.notification.frontend-url}")
     private String frontendUrl;
-
-    // Ngưỡng điểm để kích hoạt thu thập thông tin liên hệ
-    private static final int HANDOVER_SCORE_THRESHOLD = 50;
 
     // Prefix đặc biệt để nhận biết tin nhắn liên hệ từ frontend
     private static final String CONTACT_PREFIX = "[CONTACT]";
@@ -156,7 +155,8 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             // ==============================================================
             // KIỂM TRA TRIGGER: Score cao hoặc intent là handover
             // ==============================================================
-            boolean shouldHandover = "handover".equals(analysis.getIntent()) || newScore >= HANDOVER_SCORE_THRESHOLD;
+            int threshold = botSettingsService.getSettings().getHandoverThreshold();
+            boolean shouldHandover = "handover".equals(analysis.getIntent()) || newScore >= threshold;
 
             // Kiểm tra chính xác trạng thái contact hiện tại sau khi đã lưu
             boolean hasContactNow = (lead.getPhone() != null && !lead.getPhone().isBlank()) 

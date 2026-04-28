@@ -63,6 +63,7 @@
 - [x] Đổi tên nhãn "Cần Chăm Sóc" thành "Manual".
 - [x] Bộ lọc kênh hội thoại (Web/Facebook) trên Frontend.
 - [x] Thay thế Lead Score bằng Số tin nhắn chưa đọc (Unread Count) trên Admin Dashboard.
+- [x] Cơ chế bàn giao vĩnh viễn (Permanent Handover) và tin nhắn xác nhận chuyên nghiệp.
 - [x] Hiển thị tên khách hàng thật trên Admin Dashboard (thu thập từ PotentialLead).
 - [x] Tối ưu khởi tạo Chat Widget (Lazy Loading + `sessionStorage`).
 - [x] **[FIX]** Sửa lỗi Unread Count vẫn tăng khi đang xem hội thoại.

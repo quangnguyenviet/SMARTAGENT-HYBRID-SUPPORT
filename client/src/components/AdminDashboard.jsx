@@ -430,7 +430,7 @@ export default function AdminDashboard() {
             </div>
             
             {/* Nút TAKE OVER Khổng lồ */}
-            {selectedConversation && selectedConversation.isBotActive !== false && (
+            {selectedConversation && selectedConversation.isBotActive !== false && selectedConversation.status !== 'HANDED_OVER' && (
               <button 
                 onClick={handleTakeOver}
                 className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-4 py-2 font-bold text-white shadow-lg shadow-rose-500/30 transition hover:scale-105 hover:shadow-rose-500/50"

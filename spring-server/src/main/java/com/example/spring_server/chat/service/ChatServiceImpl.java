@@ -156,6 +156,12 @@ public class ChatServiceImpl implements ChatService {
                 .orElseThrow(() -> new IllegalArgumentException("Conversation not found: " + conversationId));
         
         conversation.setStatus(status);
+        
+        // Nếu chuyển sang trạng thái đã bàn giao, tự động tắt Bot
+        if ("HANDED_OVER".equals(status)) {
+            conversation.setIsBotActive(false);
+        }
+        
         conversation.setUpdatedAt(LocalDateTime.now());
         conversationRepository.save(conversation);
         

@@ -21,7 +21,7 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 - **✅ Facebook Messenger**: Hoàn tất tích hợp Webhook, Send API & Profile API (tự động lấy tên Facebook khách hàng).
 - **✅ Tối ưu khởi tạo Chat Widget**: Chỉ tạo hội thoại khi người dùng mở widget lần đầu (Lazy Loading).
 - **✅ Duy trì phiên Chat (Persistence)**: Sử dụng `sessionStorage` để giữ hội thoại khi refresh trang, tránh tạo khách hàng trùng lặp.
-- **✅ Unread Count Fix**: Sửa lỗi số tin nhắn chưa đọc vẫn tăng khi Admin đang xem hội thoại đó.
+- **✅ Permanent Handover**: Triển khai cơ chế bàn giao vĩnh viễn cho nhân viên khi khách hàng trở thành Lead. AI sẽ thực hiện "lời chào cuối" và tự động khóa (Lockout) để nhường quyền kiểm soát tuyệt đối cho con người.
 - **✅ Lead Notification Fix**: Sửa lỗi gửi trùng email thông báo cho Agent bằng cách bổ sung cờ `isLeadNotified`.
 - **✅ Bug Fix**: Sửa lỗi `ReferenceError: messagesEndRef` và lỗi cú pháp trong `MessengerService`.
 

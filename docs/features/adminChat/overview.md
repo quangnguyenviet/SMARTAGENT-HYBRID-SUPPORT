@@ -9,7 +9,11 @@ Tài liệu này mô tả tính năng cho phép Nhân viên hỗ trợ (Agent) g
 
 ## 2. Các thành phần tham gia
 - **Admin Dashboard**: Giao diện 2 cột tối ưu:
-    - **Cột 1 (Smart Inbox)**: Danh sách hội thoại với Tabs lọc ("Cần Chăm Sóc", "Tất Cả").
+    - **Cột 1 (Omnichannel Inbox)**: 
+        - Danh sách hội thoại với Tabs lọc ("Manual", "Tất Cả").
+        - Bộ lọc theo Kênh: Web, Facebook.
+        - Thanh tìm kiếm khách hàng theo Tên/ID.
+        - **Unread Count Badge**: Hiển thị số tin nhắn chưa đọc realtime, tự động reset khi chọn hội thoại.
     - **Cột 2 (Chat Workspace)**: Khu vực chat trực tiếp và quản lý lịch sử.
 - **Backend (Spring Boot)**: Xử lý tiếp nhận tin nhắn từ Admin, lưu vào Database và chuyển tiếp tới Khách hàng qua WebSocket.
 - **WebSocket (STOMP)**: Kênh truyền tải tin nhắn thời gian thực.

@@ -4,10 +4,16 @@ import chatService from '../services/chatService';
 export default function ChatWindow({ isWidget = false }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
-  const [conversationId, setConversationId] = useState(null);
+  const [conversationId, setConversationId] = useState(() => sessionStorage.getItem('smartagent_conv_id'));
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [customerId] = useState(Math.floor(Math.random() * 10000));
+  const [customerId] = useState(() => {
+    const saved = sessionStorage.getItem('smartagent_customer_id');
+    if (saved) return saved;
+    const newId = `web_${Math.floor(Math.random() * 100000)}`;
+    sessionStorage.setItem('smartagent_customer_id', newId);
+    return newId;
+  });
   const [collectingContact, setCollectingContact] = useState(false);
   const [contactForm, setContactForm] = useState({ name: '', phone: '', email: '' });
   const messagesEndRef = useRef(null);
@@ -30,10 +36,16 @@ export default function ChatWindow({ isWidget = false }) {
   async function init() {
     try {
       setLoading(true);
-      const conv = await chatService.createConversation(customerId, 'web');
-      setConversationId(conv.id);
+      let currentId = conversationId;
 
-      const history = await chatService.getConversationHistory(conv.id);
+      if (!currentId) {
+        const conv = await chatService.createConversation(customerId, 'web');
+        currentId = conv.id;
+        setConversationId(currentId);
+        sessionStorage.setItem('smartagent_conv_id', currentId);
+      }
+
+      const history = await chatService.getConversationHistory(currentId);
       setMessages(history.map(m => ({
         id: m.id,
         sender: m.sender,
@@ -42,7 +54,7 @@ export default function ChatWindow({ isWidget = false }) {
         timestamp: new Date(m.timestamp).toLocaleTimeString()
       })));
 
-      await chatService.connectWebSocket(conv.id);
+      await chatService.connectWebSocket(currentId);
     } catch (err) {
       console.error('Lỗi khởi tạo chat:', err);
     } finally {

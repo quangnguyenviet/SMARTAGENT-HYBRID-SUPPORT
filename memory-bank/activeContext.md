@@ -19,8 +19,8 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 - **✅ Ổn định AI Response**: Ép định dạng JSON nghiêm ngặt và sửa lỗi ghi đè System Prompt khi truyền tham số.
 - **✅ Typing Indicator**: Triển khai tính năng "đang nhập" (Real-time Typing) cho Khách hàng, Bot và Nhân viên.
 - **✅ Facebook Messenger**: Hoàn tất tích hợp Webhook, Send API & Profile API (tự động lấy tên Facebook khách hàng).
-- **✅ Refactor customerId**: Chuyển đổi `customerId` từ `Long` sang `String` trên toàn hệ thống để hỗ trợ các bên thứ ba (PSID).
-- **✅ Tối ưu AI Model**: Chuyển đổi sang `gemini-2.5-flash-lite` để tăng tốc độ phản hồi và tiết kiệm tài nguyên.
+- **✅ Tối ưu khởi tạo Chat Widget**: Chỉ tạo hội thoại khi người dùng mở widget lần đầu (Lazy Loading).
+- **✅ Duy trì phiên Chat (Persistence)**: Sử dụng `sessionStorage` để giữ hội thoại khi refresh trang, tránh tạo khách hàng trùng lặp.
 - **✅ Lead Notification Fix**: Sửa lỗi gửi trùng email thông báo cho Agent bằng cách bổ sung cờ `isLeadNotified`.
 - **✅ Bug Fix**: Sửa lỗi `ReferenceError: messagesEndRef` và lỗi cú pháp trong `MessengerService`.
 

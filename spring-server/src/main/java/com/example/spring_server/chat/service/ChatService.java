@@ -93,4 +93,9 @@ public interface ChatService {
      * Cập nhật thông tin khách hàng (Tên, SĐT, Email)
      */
     void updateCustomerInfo(Long conversationId, String name, String phone, String email);
+
+    /**
+     * Đánh dấu hội thoại là đã đọc (reset unreadCount)
+     */
+    void markAsRead(Long conversationId);
 }

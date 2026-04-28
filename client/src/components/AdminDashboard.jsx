@@ -76,6 +76,7 @@ export default function AdminDashboard() {
 
     if (selectedConversationId) {
       loadMessages(selectedConversationId);
+      markAsRead(selectedConversationId);
       
       // Subscribe to specific conversation for real-time events like TYPING
       chatService.subscribeToConversation(selectedConversationId, (msg) => {
@@ -152,7 +153,7 @@ export default function AdminDashboard() {
     try {
       const data = await chatService.getAllConversations();
       setConversations(data);
-      if (data.length > 0 && !selectedConversationId) {
+      if (data.length > 0 && !selectedConversationIdRef.current) {
         setSelectedConversationId(data[0].id);
       }
     } catch (err) {
@@ -162,6 +163,16 @@ export default function AdminDashboard() {
       if (!silent) setLoadingConversations(false);
     }
   }
+
+  const markAsRead = async (id) => {
+    try {
+      await chatService.markAsRead(id);
+      // Update local state to show zero unread immediately
+      setConversations(prev => prev.map(c => c.id === id ? { ...c, unreadCount: 0 } : c));
+    } catch (err) {
+      console.error('Error marking as read:', err);
+    }
+  };
 
   async function loadMessages(conversationId, silent = false) {
     if (!conversationId) return;
@@ -357,7 +368,6 @@ export default function AdminDashboard() {
               <div className="space-y-3">
                 {filteredConversations.map((conversation) => {
                   const isSelected = conversation.id === selectedConversationId;
-                  const score = conversation.leadScore || 0;
                   const botActive = conversation.isBotActive !== false;
 
                   return (
@@ -382,11 +392,13 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         
-                        {/* Lửa thể hiện độ "Hot" của Lead */}
+                        {/* UNREAD MESSAGES BADGE */}
                         <div className="flex flex-col items-end">
-                          <span className={`text-lg font-bold flex items-center gap-1 ${score >= 50 ? 'text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : score >= 15 ? 'text-amber-500' : 'text-slate-500'}`}>
-                            {score} <span className="text-sm">🔥</span>
-                          </span>
+                          {conversation.unreadCount > 0 && (
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-black text-slate-900 shadow-[0_0_12px_rgba(6,182,212,0.5)] animate-bounce">
+                              {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
+                            </div>
+                          )}
                         </div>
                       </div>
 

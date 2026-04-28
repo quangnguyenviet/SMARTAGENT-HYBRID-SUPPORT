@@ -87,6 +87,20 @@ class ChatService {
     }
   }
 
+  // REST API - Mark conversation as read
+  async markAsRead(conversationId) {
+    try {
+      const res = await fetch(`${API_BASE}/conversations/${conversationId}/read`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      return data.success;
+    } catch (error) {
+      console.error('Mark as read failed:', error);
+      return false;
+    }
+  }
+
   // STOMP WebSocket - Connect for Customer
   connectWebSocket(conversationId) {
     return this._connect(() => {

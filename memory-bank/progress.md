@@ -62,6 +62,7 @@
 - [x] `AdminDashboard.jsx`: 3 cột không còn bị kéo dài theo cột cao nhất (`h-screen` + `calc(100vh - 73px)`).
 - [x] Đổi tên nhãn "Cần Chăm Sóc" thành "Manual".
 - [x] Bộ lọc kênh hội thoại (Web/Facebook) trên Frontend.
+- [x] Thay thế Lead Score bằng Số tin nhắn chưa đọc (Unread Count) trên Admin Dashboard.
 - [x] Hiển thị tên khách hàng thật trên Admin Dashboard (thu thập từ PotentialLead).
 - [x] **[FIX]** Sửa lỗi gửi trùng email Lead (Sử dụng cờ `isLeadNotified`).
 - [x] **[FIX]** Sửa lỗi crash màn hình do thiếu `messagesEndRef` trong `ChatWindow.jsx`.

@@ -105,6 +105,12 @@ public class ChatServiceImpl implements ChatService {
                 .message(dto)
                 .build());
                 
+        // Tăng số tin nhắn chưa đọc nếu là khách nhắn
+        if ("user".equals(messageDTO.getSenderType())) {
+            conversation.setUnreadCount(conversation.getUnreadCount() + 1);
+            conversationRepository.save(conversation);
+        }
+
         // Broadcast to the specific conversation room
         messagingTemplate.convertAndSend("/topic/chat/" + conversationId, dto);
         
@@ -234,6 +240,24 @@ public class ChatServiceImpl implements ChatService {
                         .build());
     }
 
+    @Override
+    public void markAsRead(Long conversationId) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation not found: " + conversationId));
+
+        if (conversation.getUnreadCount() > 0) {
+            conversation.setUnreadCount(0);
+            conversationRepository.save(conversation);
+
+            // Broadcast update to admin dashboard
+            messagingTemplate.convertAndSend("/topic/admin/conversations",
+                    AdminDashboardEvent.builder()
+                            .eventType(AdminDashboardEvent.EventType.CONVERSATION_UPDATED)
+                            .conversation(entityToDTO(conversation))
+                            .build());
+        }
+    }
+
     // Helper methods for DTO conversion
     
     private ConversationDTO entityToDTO(Conversation entity) {
@@ -244,6 +268,7 @@ public class ChatServiceImpl implements ChatService {
                 .status(entity.getStatus())
                 .isBotActive(entity.getIsBotActive())
                 .leadScore(entity.getLeadScore())
+                .unreadCount(entity.getUnreadCount())
                 .intentSummary(entity.getPotentialLead() != null ? entity.getPotentialLead().getIntentSummary() : null)
                 .customerName(entity.getPotentialLead() != null ? entity.getPotentialLead().getCustomerName() : null)
                 .customerPhone(entity.getPotentialLead() != null ? entity.getPotentialLead().getPhone() : null)

@@ -32,6 +32,7 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 - **✅ Label Renaming**: Đổi tên nhãn "Cần Chăm Sóc" thành "Manual" để chuyên nghiệp hơn.
 - **✅ Customer Naming**: Hiển thị tên thật của khách hàng (thu thập từ Bot) trên Admin Dashboard thay vì chỉ hiển thị mã ID.
 - **✅ Channel Filter**: Triển khai bộ lọc kênh (All, Web, Facebook) trên Frontend của trang Admin.
+- **✅ Unread Message Count**: Thay thế hiển thị Lead Score bằng số tin nhắn chưa đọc trên danh sách hội thoại. Tự động reset khi Admin xem tin nhắn.
 
 ### Containerization (Docker)
 - **✅ Dockerfile**: Tạo Dockerfile cho cả `spring-server` và `client`.

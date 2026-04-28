@@ -61,6 +61,12 @@ public class Conversation {
      */
     @Column(name = "assigned_agent_id")
     private Long assignedAgentId;
+
+    /**
+     * Số tin nhắn chưa đọc từ phía khách hàng
+     */
+    @Column(name = "unread_count", nullable = false)
+    private Integer unreadCount = 0;
     
     /**
      * Thời gian tạo conversation

@@ -52,11 +52,17 @@ Dự án đã chuyển từ chốt stack sang triển khai thực tế cho chat 
   - Cấu hình qua env var: `MAIL_USERNAME`, `MAIL_PASSWORD` (Gmail App Password), `AGENT_EMAIL`, `FRONTEND_URL`.
 
 ### 3. AI Service (Google Gemini)
-- Hệ thống tích hợp trực tiếp với **Gemini 1.5 Flash** thông qua Spring AI.
-- Sử dụng **Prompt Engineering** chuyên sâu 3 giai đoạn (Sàng lọc → Tín hiệu → Chuyển giao).
-- Quy tắc chấm điểm: +10 (yêu cầu chi tiết), +20 (hỏi giá/thời gian), +30 (để lại liên hệ), +50 (khiếu nại).
-- Structured Output: AI trả về `AiAnalysisResult` JSON gồm `reply`, `intent`, `sentiment`, `scoreIncrement`.
-- Cấu hình: `base-url: https://generativelanguage.googleapis.com`, `completions-path: /v1beta/openai/chat/completions`.
+- **AI Prompt Engineering**:
+  - Quy trình 3 giai đoạn: PRE-LEAD (Tư vấn), LEAD DETECTED (Xin contact), POST-LEAD (Duy trì/Xác nhận).
+  - Quy tắc chấm điểm nhạy bén (+10/+20/+30/+50).
+  - **Quy tắc "Một câu hỏi"**: Giới hạn AI chỉ hỏi 1 ý mỗi lần phản hồi để tối ưu UX.
+- **Structured Output (AiAnalysisResult)**: JSON gồm:
+  - `reply`: Câu trả lời gợi ý.
+  - `intent`: Ý định (handover, pricing, technical, v.v.).
+  - `sentiment`: Cảm xúc khách hàng.
+  - `scoreIncrement`: Điểm cộng thêm.
+  - **`customerName`, `phone`, `email`**: Thông tin trích xuất trực tiếp từ AI.
+- **Cấu hình**: `base-url: https://generativelanguage.googleapis.com`, `completions-path: /v1beta/openai/chat/completions`.
 
 ### 4. Database & Storage
 - **Redis**: Lưu trữ "Trạng thái hội thoại" (Session state). Ví dụ: `conversation_123 -> {is_bot_active: true, current_score: 45}`. Giúp quá trình chuyển giao (Handover) diễn ra với độ trễ gần như bằng 0.

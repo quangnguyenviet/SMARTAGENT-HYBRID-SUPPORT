@@ -305,7 +305,7 @@ export default function AdminDashboard() {
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Manual
+                Nhân viên hỗ trợ
                 {needsCareConversations.length > 0 && (
                   <span className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
                     inboxTab === 'care' ? 'bg-rose-500 text-white' : 'bg-slate-700 text-slate-300'
@@ -395,12 +395,23 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         
-                        {/* UNREAD MESSAGES BADGE */}
+                        {/* BADGE HIỂN THỊ: LEAD SCORE HOẶC UNREAD COUNT */}
                         <div className="flex flex-col items-end">
-                          {conversation.unreadCount > 0 && (
-                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-black text-slate-900 shadow-[0_0_12px_rgba(6,182,212,0.5)] animate-bounce">
-                              {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
+                          {botActive ? (
+                            <div className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black ${
+                              conversation.leadScore >= 50 
+                                ? 'bg-orange-500 text-white shadow-[0_0_12px_rgba(249,115,22,0.5)] animate-pulse' 
+                                : 'bg-slate-700 text-slate-400'
+                            }`}>
+                              <span>🔥</span>
+                              {conversation.leadScore || 0}
                             </div>
+                          ) : (
+                            conversation.unreadCount > 0 && (
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-black text-slate-900 shadow-[0_0_12px_rgba(6,182,212,0.5)] animate-bounce">
+                                {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
+                              </div>
+                            )
                           )}
                         </div>
                       </div>

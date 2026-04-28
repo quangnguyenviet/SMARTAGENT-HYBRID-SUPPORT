@@ -51,21 +51,19 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     // Regex nhận diện SĐT Việt Nam (9-11 số, có thể bắt đầu bằng +84)
     private static final Pattern PHONE_PATTERN = Pattern.compile(
             "(?:\\+84|0)(\\d{9,10})",
-            Pattern.CASE_INSENSITIVE
-    );
+            Pattern.CASE_INSENSITIVE);
 
     // Regex nhận diện email
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}",
-            Pattern.CASE_INSENSITIVE
-    );
+            Pattern.CASE_INSENSITIVE);
 
     @Async
     @Override
     @Transactional
     public void processUserMessage(Long conversationId, String content) {
         log.info("Orchestrator bắt đầu xử lý tin nhắn cho hội thoại: {}", conversationId);
-        
+
         try {
             Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
             if (conversation == null) {
@@ -90,12 +88,14 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 return;
             }
 
-            // Nếu bot không còn được phép tự động trả lời, hoặc hội thoại đã đóng thì bỏ qua
+            // Nếu bot không còn được phép tự động trả lời, hoặc hội thoại đã đóng thì bỏ
+            // qua
             if (Boolean.FALSE.equals(conversation.getIsBotActive()) || !isActiveStatus(conversation.getStatus())) {
-                log.info("Bot không hoạt động hoặc hội thoại không ở trạng thái ACTIVE cho id: {}. Bỏ qua.", conversationId);
+                log.info("Bot không hoạt động hoặc hội thoại không ở trạng thái ACTIVE cho id: {}. Bỏ qua.",
+                        conversationId);
                 return;
             }
-            
+
             // Bật chỉ báo typing cho Bot (Chỉ bật khi chắc chắn Bot sẽ trả lời)
             sendBotTyping(conversationId, true);
 
@@ -105,10 +105,12 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
             // Kiểm tra thông tin liên hệ từ database
             boolean hasContactInfoInDb = lead.getPhone() != null || lead.getEmail() != null;
-            
-            // KIỂM TRA THÊM: Trích xuất nhanh từ tin nhắn hiện tại (tránh việc AI hỏi lại khi khách vừa cung cấp)
-            boolean hasContactInCurrentMessage = PHONE_PATTERN.matcher(content).find() || EMAIL_PATTERN.matcher(content).find();
-            
+
+            // KIỂM TRA THÊM: Trích xuất nhanh từ tin nhắn hiện tại (tránh việc AI hỏi lại
+            // khi khách vừa cung cấp)
+            boolean hasContactInCurrentMessage = PHONE_PATTERN.matcher(content).find()
+                    || EMAIL_PATTERN.matcher(content).find();
+
             boolean hasContactInfo = hasContactInfoInDb || hasContactInCurrentMessage;
 
             // Lấy lịch sử tin nhắn để làm ngữ cảnh cho AI
@@ -116,8 +118,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     .map(m -> m.getSenderType() + ": " + m.getContent())
                     .collect(Collectors.toList());
 
-            // Gọi AI phân tích (Truyền thêm trạng thái Lead)
-            AiAnalysisResult analysis = aiScoringClient.analyzeMessage(content, history, hasContactInfo);
+            // Gọi AI phân tích (Truyền thêm trạng thái Lead và Channel)
+            AiAnalysisResult analysis = aiScoringClient.analyzeMessage(content, history, hasContactInfo,
+                    conversation.getChannel());
 
             // Cập nhật Lead Score
             int currentScore = conversation.getLeadScore() != null ? conversation.getLeadScore() : 0;
@@ -127,6 +130,23 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             if (analysis.getIntent() != null && !analysis.getIntent().equals("neutral")) {
                 lead.setIntentSummary(analysis.getIntent());
             }
+            // CẬP NHẬT THÔNG TIN TRÍCH XUẤT TỪ AI
+            boolean aiExtracted = false;
+            if (analysis.getPhone() != null && !analysis.getPhone().isBlank()) {
+                lead.setPhone(analysis.getPhone());
+                aiExtracted = true;
+            }
+            if (analysis.getEmail() != null && !analysis.getEmail().isBlank()) {
+                lead.setEmail(analysis.getEmail());
+                aiExtracted = true;
+            }
+            if (analysis.getCustomerName() != null && !analysis.getCustomerName().isBlank()) {
+                lead.setCustomerName(analysis.getCustomerName());
+            }
+            if (aiExtracted) {
+                lead.setContactCollectedAt(LocalDateTime.now());
+            }
+
             potentialLeadRepository.save(lead);
             conversationRepository.save(conversation);
 
@@ -138,15 +158,22 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             // ==============================================================
             boolean shouldHandover = "handover".equals(analysis.getIntent()) || newScore >= HANDOVER_SCORE_THRESHOLD;
 
-            if (shouldHandover) {
-                log.info("🎯 Phát hiện khách tiềm năng tại hội thoại {}. Score: {}. Intent: {}",
-                        conversationId, newScore, analysis.getIntent());
+            // Kiểm tra chính xác trạng thái contact hiện tại sau khi đã lưu
+            boolean hasContactNow = (lead.getPhone() != null && !lead.getPhone().isBlank()) 
+                                 || (lead.getEmail() != null && !lead.getEmail().isBlank());
 
-                if (!hasContactInfo) {
-                    // Chưa có thông tin → Bot hỏi xin thông tin liên hệ
+            if (shouldHandover) {
+                log.info("🎯 Phát hiện khách tiềm năng tại hội thoại {}. Score: {}. Intent: {}. Channel: {}",
+                        conversationId, newScore, analysis.getIntent(), conversation.getChannel());
+
+                if ("facebook".equalsIgnoreCase(conversation.getChannel())) {
+                    // Facebook → Handover âm thầm
+                    silentHandoverForFacebook(conversationId, conversation, lead, analysis);
+                } else if (!hasContactNow) {
+                    // Website và chưa có thông tin → Bot hỏi xin thông tin liên hệ
                     requestContactInfo(conversationId, conversation, analysis);
                 } else {
-                    // Đã có thông tin → Chuyển trạng thái Handover + gửi email (Bot sẽ tắt)
+                    // Website và đã có thông tin → Chuyển trạng thái Handover + gửi email (Bot sẽ tắt)
                     triggerHandoverWithNotification(conversationId, conversation, lead, analysis, newScore);
                 }
 
@@ -182,9 +209,12 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         String email = extractTagValue(payload, "Email");
 
         // Gán thông tin
-        if (name != null && !name.isBlank()) lead.setCustomerName(name);
-        if (phone != null && !phone.isBlank()) lead.setPhone(phone);
-        if (email != null && !email.isBlank()) lead.setEmail(email);
+        if (name != null && !name.isBlank())
+            lead.setCustomerName(name);
+        if (phone != null && !phone.isBlank())
+            lead.setPhone(phone);
+        if (email != null && !email.isBlank())
+            lead.setEmail(email);
         lead.setContactCollectedAt(LocalDateTime.now());
         potentialLeadRepository.save(lead);
 
@@ -261,7 +291,8 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     }
 
     /**
-     * Bot gửi tin nhắn yêu cầu thông tin liên hệ và chuyển trạng thái sang COLLECTING_CONTACT
+     * Bot gửi tin nhắn yêu cầu thông tin liên hệ và chuyển trạng thái sang
+     * COLLECTING_CONTACT
      */
     private void requestContactInfo(Long conversationId, Conversation conversation, AiAnalysisResult analysis) {
         // Cập nhật trạng thái hội thoại
@@ -271,14 +302,14 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         // Bot trả lời tin cuối rồi yêu cầu thông tin
         String leadReply = analysis.getReply() != null && !analysis.getReply().isEmpty()
                 ? analysis.getReply()
-                : "Tôi thấy bạn có nhu cầu cụ thể. Để nhân viên tư vấn có thể hỗ trợ bạn tốt nhất:";
+                : "Mình đã nắm được nhu cầu của bạn. Để chuyên viên của SmartAgent có thể liên hệ tư vấn chi tiết và gửi báo giá chính xác nhất, bạn vui lòng để lại thông tin liên lạc nhé:";
 
         sendBotReply(conversationId, leadReply);
 
         // Gửi tin nhắn đặc biệt kích hoạt form thu thập contact ở frontend
         MessageDTO collectRequest = MessageDTO.builder()
                 .sender("AI Assistant")
-                .senderType("collect_contact")   // eventType đặc biệt để frontend nhận ra
+                .senderType("collect_contact") // eventType đặc biệt để frontend nhận ra
                 .content("Cho mình xin thông tin liên hệ để nhân viên có thể liên hệ lại với bạn nhanh nhất nhé! 📞")
                 .build();
         chatService.sendMessage(conversationId, collectRequest);
@@ -287,10 +318,34 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     }
 
     /**
+     * Thực hiện handover âm thầm cho Facebook (tắt bot, không gửi tin nhắn chuyển
+     * giao)
+     */
+    private void silentHandoverForFacebook(Long conversationId, Conversation conversation,
+            PotentialLead lead, AiAnalysisResult analysis) {
+        conversation.setIsBotActive(false);
+        conversation.setStatus("HANDED_OVER");
+        conversationRepository.save(conversation);
+        chatService.updateConversationStatus(conversationId, "HANDED_OVER");
+
+        // Vẫn gửi tin nhắn phản hồi của AI (nếu có) để hội thoại tự nhiên
+        if (analysis.getReply() != null && !analysis.getReply().isBlank()) {
+            sendBotReply(conversationId, analysis.getReply());
+        }
+
+        // Gửi email thông báo cho nhân viên
+        if (!Boolean.TRUE.equals(lead.getIsLeadNotified())) {
+            sendLeadEmail(lead, conversation);
+        }
+        broadcastScoreUpdate(conversationId);
+        log.info("🤫 Silent Handover thành công cho Facebook: {}", conversationId);
+    }
+
+    /**
      * Thực hiện handover khi đã có đầy đủ thông tin liên hệ
      */
     private void triggerHandoverWithNotification(Long conversationId, Conversation conversation,
-                                                  PotentialLead lead, AiAnalysisResult analysis, int newScore) {
+            PotentialLead lead, AiAnalysisResult analysis, int newScore) {
         conversation.setIsBotActive(false);
         conversation.setStatus("HANDED_OVER");
         conversationRepository.save(conversation);
@@ -321,10 +376,10 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 .filter(m -> !m.getContent().startsWith(CONTACT_PREFIX)) // Bỏ tin nhắn contact prefix
                 .map(m -> {
                     String label = switch (m.getSenderType()) {
-                        case "user"  -> "Khách hàng";
-                        case "bot"   -> "Bot";
+                        case "user" -> "Khách hàng";
+                        case "bot" -> "Bot";
                         case "agent" -> "Nhân viên";
-                        default      -> m.getSenderType();
+                        default -> m.getSenderType();
                     };
                     return label + ": " + m.getContent();
                 })
@@ -345,12 +400,11 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 .build();
 
         notificationService.sendLeadNotification(notificationData);
-        
+
         // Đánh dấu đã thông báo để không gửi trùng lặp
         lead.setIsLeadNotified(true);
         potentialLeadRepository.save(lead);
     }
-
 
     /**
      * Broadcast điểm số mới lên Admin Dashboard qua STOMP
@@ -367,8 +421,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
      * Gửi tin nhắn bot về phía khách hàng
      */
     private void sendBotReply(Long conversationId, String content) {
-        if (content == null || content.isBlank()) return;
-        
+        if (content == null || content.isBlank())
+            return;
+
         // Tắt typing trước khi gửi tin nhắn
         sendBotTyping(conversationId, false);
 
@@ -403,13 +458,17 @@ public class OrchestratorServiceImpl implements OrchestratorService {
      */
     private String buildConfirmMessage(PotentialLead lead) {
         StringBuilder sb = new StringBuilder("✅ Cảm ơn bạn! Mình đã ghi nhận thông tin:");
-        if (lead.getCustomerName() != null) sb.append("\n• Tên: ").append(lead.getCustomerName());
-        if (lead.getPhone() != null) sb.append("\n• SĐT: ").append(lead.getPhone());
-        if (lead.getEmail() != null) sb.append("\n• Email: ").append(lead.getEmail());
-        
+        if (lead.getCustomerName() != null)
+            sb.append("\n• Tên: ").append(lead.getCustomerName());
+        if (lead.getPhone() != null)
+            sb.append("\n• SĐT: ").append(lead.getPhone());
+        if (lead.getEmail() != null)
+            sb.append("\n• Email: ").append(lead.getEmail());
+
         sb.append("\n\nToàn bộ nội dung tư vấn của chúng ta nãy giờ đã được chuyển tới chuyên viên hỗ trợ. ");
         sb.append("Họ sẽ liên hệ trực tiếp với bạn sớm nhất có thể. ");
-        sb.append("\n\nTừ giờ, mọi tin nhắn bạn gửi tại đây sẽ được nhân viên của chúng tôi phản hồi trực tiếp. Chúc bạn một ngày tốt lành! 🙏");
+        sb.append(
+                "\n\nTừ giờ, mọi tin nhắn bạn gửi tại đây sẽ được nhân viên của chúng tôi phản hồi trực tiếp. Chúc bạn một ngày tốt lành! 🙏");
         return sb.toString();
     }
 

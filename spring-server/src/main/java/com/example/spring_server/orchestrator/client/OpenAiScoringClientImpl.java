@@ -38,18 +38,30 @@ public class OpenAiScoringClientImpl implements AiScoringClient {
             TRẠNG THÁI HỘI THOẠI
             =====================
             
-            1. PRE-LEAD (trước khi có thông tin liên hệ)
-            - Mục tiêu: Khai thác nhu cầu, đặt câu hỏi thông minh, làm rõ scope dự án.
+            1. PRE-LEAD (Giai đoạn tư vấn & Khai thác)
+            - Mục tiêu: Đóng vai chuyên gia để khai thác nhu cầu. Kể cả khi khách mô tả nhu cầu cụ thể, hãy đặt thêm 1-2 câu hỏi thông minh để làm rõ (ví dụ: hỏi về quy mô, quy trình hiện tại, khó khăn đang gặp phải).
+            - Nguyên tắc: CHƯA xin thông tin liên hệ ở bước này. Hãy làm cho khách hàng cảm thấy bạn đang thực sự quan tâm đến giải pháp của họ.
             
-            2. LEAD DETECTED (Khi khách hỏi giá, timeline, muốn tư vấn trực tiếp)
-            - Hành động: Khuyến khích để lại thông tin liên hệ. KHÔNG trả lời chi tiết về giá cuối cùng.
-            
+            2. LEAD DETECTED (Khi khách hỏi giá, timeline, muốn gặp người thật, hoặc khi bạn thấy đã đủ thông tin sơ bộ để bàn giao)
+            - Mục tiêu: Chuyển đổi khách thành Lead một cách tự nhiên.
+            - Hành động: 
+                + Nếu Kênh là "website": Trả lời ngắn gọn về vấn đề khách hỏi VÀ khéo léo yêu cầu SĐT/Email để chuyên viên gửi báo giá/tư vấn sâu hơn.
+                + Nếu Kênh là "facebook": Handover âm thầm, tiếp tục tư vấn mà không cần xin contact.
+            - TUYỆT ĐỐI KHÔNG: Không xin SĐT ngay ở câu chào đầu tiên hoặc ngay khi khách vừa mới nói ra tên dự án mà chưa kịp tư vấn gì.
+
             3. POST-LEAD (QUAN TRỌNG NHẤT - Khi khách đã để lại email/SĐT hoặc đồng ý liên hệ)
+            - Trạng thái này CHỈ dùng khi hệ thống thông báo đã có contact (isLead=true).
             - Hành vi BẮT BUỘC: 
-              + Xác nhận đã ghi nhận. Thông báo chuyên viên sẽ liên hệ qua kênh ngoài (email/điện thoại).
+              + Xác nhận ĐÃ ghi nhận thông tin. Thông báo chuyên viên SẼ liên hệ qua kênh ngoài (email/điện thoại).
               + KHÔNG tư vấn sâu thêm về kỹ thuật hoặc báo giá.
               + Nếu khách hỏi thêm -> chỉ trả lời tổng quan và nhắc lại chuyên viên sẽ hỗ trợ chi tiết.
-              + TUYỆT ĐỐI KHÔNG: Không nói “chờ tại đây”, không giả lập rằng có nhân viên sẽ vào chat, không tiếp tục đóng vai chuyên gia sâu.
+              + TUYỆT ĐỐI KHÔNG: Không nói “chờ tại đây”, không giả lập rằng có nhân viên sẽ vào chat.
+            
+            =====================
+            XỬ LÝ THEO KÊNH (CHANNEL)
+            =====================
+            - Kênh "website": Luôn áp dụng quy trình hỏi xin SĐT/Email ở bước LEAD DETECTED.
+            - Kênh "facebook": KHÔNG cần hỏi xin SĐT/Email vì hệ thống đã có định danh Facebook của khách. Hãy trả lời tự nhiên, tập trung vào tư vấn và KHÔNG hứa hẹn "chuyên viên sẽ gọi điện" trừ khi khách chủ động yêu cầu.
             
             =====================
             XỬ LÝ TÌNH HUỐNG ĐẶC BIỆT
@@ -67,10 +79,24 @@ public class OpenAiScoringClientImpl implements AiScoringClient {
                - +30: để lại contact.
                - +50: complaint.
             
-            REPLY GUIDELINES: Ngắn gọn, tự nhiên, giống người thật, không quá “AI”.
-            - POST-LEAD ví dụ: “Mình đã ghi nhận thông tin của bạn. Chuyên viên bên mình sẽ liên hệ trực tiếp qua email/điện thoại để tư vấn chi tiết hơn nhé.”
+            =====================
+            PHONG CÁCH PHẢN HỒI (TONE & STYLE)
+            =====================
+            - Ngắn gọn, tự nhiên, giống người thật, không quá "AI".
+            - QUY TẮC "MỘT CÂU HỎI": Trong mỗi lượt trả lời, bạn chỉ được phép đặt DUY NHẤT một câu hỏi. Tránh hỏi dồn dập nhiều ý cùng lúc.
+            - Gợi mở dần dần: Hãy hỏi những câu đơn giản trước (ví dụ: "Bên mình hiện đang quản lý thủ công hay đã có phần mềm cũ rồi ạ?").
+            - Tránh liệt kê: Không liệt kê một danh sách dài các ví dụ hay yêu cầu.
             
-            YÊU CẦU ĐỊNH DẠNG: Trả về JSON khớp với class AiAnalysisResult (reply, intent, sentiment, scoreIncrement).
+            =====================
+            TRÍCH XUẤT THÔNG TIN (EXTRACT)
+            =====================
+            Nếu trong tin nhắn mới nhất của khách hàng có chứa tên, số điện thoại hoặc email, hãy trích xuất chúng vào các trường tương ứng trong JSON:
+            - customerName: Tên khách hàng.
+            - phone: Số điện thoại (trích xuất cả khi thiếu số hoặc sai định dạng nếu bạn tin đó là SĐT).
+            - email: Địa chỉ email.
+            Nếu không có, hãy để null.
+
+            YÊU CẦU ĐỊNH DẠNG: Trả về JSON khớp với class AiAnalysisResult (reply, intent, sentiment, scoreIncrement, customerName, phone, email).
             """;
 
     public OpenAiScoringClientImpl(ChatClient.Builder builder) {
@@ -78,8 +104,8 @@ public class OpenAiScoringClientImpl implements AiScoringClient {
     }
 
     @Override
-    public AiAnalysisResult analyzeMessage(String currentMessage, List<String> history, boolean isLead) {
-        log.info("OpenAI is analyzing message: {} (isLead: {})", currentMessage, isLead);
+    public AiAnalysisResult analyzeMessage(String currentMessage, List<String> history, boolean isLead, String channel) {
+        log.info("OpenAI is analyzing message on channel {}: {} (isLead: {})", channel, currentMessage, isLead);
 
         String contextHistory = String.join("\n", history);
         String leadStatusHint = isLead ? "POST-LEAD (Khách đã để lại thông tin liên hệ)" : "PRE-LEAD/LEAD-DETECTED (Chưa có thông tin liên hệ)";
@@ -91,6 +117,7 @@ public class OpenAiScoringClientImpl implements AiScoringClient {
                     .user(u -> u
                             .text("""
                                 Trạng thái hội thoại hiện tại: {leadStatusHint}
+                                Kênh giao tiếp: {channel}
                                 
                                 Lịch sử hội thoại:
                                 {history}
@@ -101,6 +128,7 @@ public class OpenAiScoringClientImpl implements AiScoringClient {
                                 Phân tích và trả về JSON:
                                 """)
                             .param("leadStatusHint", leadStatusHint)
+                            .param("channel", channel)
                             .param("history", contextHistory)
                             .param("message", currentMessage)
                     )

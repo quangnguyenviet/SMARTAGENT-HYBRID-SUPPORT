@@ -82,6 +82,11 @@ Hệ thống cho phép Admin thay đổi hành vi của AI ngay lập tức mà 
 
 ## 📸 Kết quả demo
 
+### 🎥 Video Demo
+![SmartAgent Demo Video](asset/videos/demo.mp4)
+
+
+
 | Website Chat Widget | Admin Hybrid Dashboard |
 |:---:|:---:|
 | ![Website Chat](asset/images/image1.png) | ![Admin Dashboard](asset/images/image2.png) |

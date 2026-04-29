@@ -54,11 +54,10 @@ graph TD
     - **Permanent Handover**: Hệ thống tự động khóa Bot (isBotActive = false) ngay sau khi bàn giao thành công. Mọi tin nhắn sau đó từ khách hàng sẽ chờ nhân viên phản hồi trực tiếp từ Dashboard.
     - **Silent Handover (Facebook)**: Riêng với Messenger, việc bàn giao diễn ra âm thầm, không có tin nhắn hệ thống để đảm bảo trải nghiệm khách hàng liền mạch và tự nhiên nhất.
 
-## 🚀 Các Tính Năng Đột Phá
+## 🚀 Tính năng
 
 ### 🎯 Tư Vấn Giải Pháp AI (AI Solution Consultancy)
 AI không chỉ trả lời tự động mà còn đóng vai trò là một **Chuyên viên tư vấn kỹ thuật sơ bộ**:
-- **Project Scoring**: Đánh giá mức độ tiềm năng của dự án dựa trên yêu cầu tính năng, công nghệ và ngân sách mà khách hàng đề cập.
 - **Auto Lead Capture**: Khi phát hiện nhu cầu xây dựng phần mềm rõ ràng, Bot tự động hiển thị **Mini Contact Form** để thu thập thông tin liên hệ để có thể yêu cầu chuyên viên tư vấn chuyên sâu
 
 ### 📧 Thông Báo Dự Án (Project Notification)

@@ -10,25 +10,18 @@ Dự án **SmartAgent Hybrid Support** đã hoàn thiện MVP và vừa trải q
 ## Công Việc Đã Hoàn Thành Trong Phiên Này
 
 ### Refactor Chat Flow & AI Logic (Mới)
-- **✅ AI Prompt 3 Giai Đoạn**: Tích hợp luồng tư vấn chuyên nghiệp vào `OpenAiScoringClientImpl.java`.
-  - `PRE-LEAD`: Khai thác nhu cầu, đặt câu hỏi thông minh.
-  - `LEAD DETECTED`: Khuyến khích để lại contact, tránh báo giá chi tiết.
-  - `POST-LEAD`: Xác nhận ghi nhận, thông báo liên hệ sau, dừng tư vấn sâu.
-- **✅ Duy trì Bot hoạt động**: Refactor `OrchestratorServiceImpl` để bot không tự tắt ngay khi có contact. Bot đóng vai trò "gatekeeper" cho đến khi Agent thực sự Take Over.
-- **✅ Sửa lỗi Race Condition**: Trích xuất SĐT/Email ngay đầu luồng xử lý để AI không hỏi lại thông tin vừa mới cung cấp.
-- **✅ Ổn định AI Response**: Ép định dạng JSON nghiêm ngặt và sửa lỗi ghi đè System Prompt khi truyền tham số.
-- **✅ Typing Indicator**: Triển khai tính năng "đang nhập" (Real-time Typing) cho Khách hàng, Bot và Nhân viên.
-- **✅ Facebook Messenger**: Hoàn tất tích hợp Webhook, Send API & Profile API (tự động lấy tên Facebook khách hàng).
-- **✅ Refactor customerId**: Chuyển đổi `customerId` từ `Long` sang `String` trên toàn hệ thống để hỗ trợ các bên thứ ba (PSID).
-- **✅ Tối ưu AI Model**: Chuyển đổi sang `gemini-2.5-flash-lite` để tăng tốc độ phản hồi và tiết kiệm tài nguyên.
-- **✅ Bug Fix**: Sửa lỗi `ReferenceError: messagesEndRef` và lỗi cú pháp trong `MessengerService`.
+- **✅ Silent Handover (Facebook)**: Triển khai luồng bàn giao âm thầm cho Messenger. Bot tự động tắt và chuyển trạng thái `HANDED_OVER` mà không gửi tin nhắn hệ thống, giúp nhân viên tiếp quản tự nhiên.
+- **✅ AI-Driven Contact Extraction**: Nâng cấp AI để tự động bóc tách Tên, SĐT, Email từ nội dung tin nhắn (hỗ trợ cả trường hợp sai định dạng hoặc thiếu số mà Regex không bắt được).
+- **✅ Quy tắc "Một câu hỏi" (One Question Rule)**: Ràng buộc AI chỉ đặt duy nhất 1 câu hỏi mỗi lượt chat để tránh gây áp lực cho khách hàng và giữ hội thoại tự nhiên.
+- **✅ Tư vấn chuyên sâu (Consultation First)**: Điều chỉnh Prompt để AI đóng vai chuyên gia tư vấn kỹ hơn trước khi chủ động xin thông tin liên hệ.
+- **✅ Sửa lỗi Double-Message**: Khắc phục lỗi Bot vừa cảm ơn nhận SĐT vừa hỏi xin lại SĐT do xung đột logic giữa Regex và AI.
+- **✅ Permanent Handover**: Triển khai cơ chế bàn giao vĩnh viễn cho nhân viên khi khách hàng trở thành Lead. AI sẽ thực hiện "lời chào cuối" và tự động khóa (Lockout) để nhường quyền kiểm soát tuyệt đối cho con người.
+- **✅ Lead Notification Fix**: Sửa lỗi gửi trùng email thông báo cho Agent bằng cách bổ sung cờ `isLeadNotified`.
 
-### Docker & WebSocket Fixes
-- **✅ CORS Configuration**: Cập nhật `CorsConfig.java` và `WebSocketConfig.java` cho phép origin `http://localhost` (dành cho Docker deployment trên port 80).
-
-### Fix Layout Admin Dashboard
-- **✅ `AdminDashboard.jsx`**: Đổi outer div từ `min-h-screen` → `h-screen overflow-hidden`. Grid container dùng `height: calc(100vh - 73px)` thay vì `flex-1` → 3 cột không còn bị kéo dài theo cột cao nhất.
-- **✅ Label Renaming**: Đổi tên nhãn "Cần Chăm Sóc" thành "Manual" để chuyên nghiệp hơn.
+### Admin Dashboard Enhancements
+- **✅ Lead Score Badge**: Thay đổi hiển thị trên danh sách hội thoại: Hiển thị **Lead Score 🔥** cho khách hàng đang được Bot chăm sóc và **Unread Count** cho khách hàng đã bàn giao.
+- **✅ Hot Lead Indicator**: Thêm hiệu ứng nhấp nháy (pulse) và màu sắc nổi bật cho các hội thoại có Lead Score >= 50.
+- **✅ Label Renaming**: Đổi tên nhãn "Manual" thành "Nhân viên hỗ trợ" để thân thiện hơn.
 - **✅ Customer Naming**: Hiển thị tên thật của khách hàng (thu thập từ Bot) trên Admin Dashboard thay vì chỉ hiển thị mã ID.
 - **✅ Channel Filter**: Triển khai bộ lọc kênh (All, Web, Facebook) trên Frontend của trang Admin.
 

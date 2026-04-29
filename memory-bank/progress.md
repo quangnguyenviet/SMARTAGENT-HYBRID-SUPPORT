@@ -58,12 +58,28 @@
 - [x] `COLLECTING_CONTACT` — trạng thái hội thoại mới giữa ACTIVE và HANDED_OVER.
 - [x] `ChatWindow.jsx`: mini contact form (Tên, SĐT, Email) hiển thị khi bot yêu cầu.
 
-### Fix Layout Admin
+### Admin Dashboard & UI Enhancements
 - [x] `AdminDashboard.jsx`: 3 cột không còn bị kéo dài theo cột cao nhất (`h-screen` + `calc(100vh - 73px)`).
-- [x] Đổi tên nhãn "Cần Chăm Sóc" thành "Manual".
+- [x] Đổi tên nhãn "Cần Chăm Sóc" thành "Nhân viên hỗ trợ".
 - [x] Bộ lọc kênh hội thoại (Web/Facebook) trên Frontend.
+- [x] **[NEW]** Hiển thị **Lead Score 🔥** (thay cho Unread Count) cho các hội thoại Bot đang xử lý.
+- [x] **[NEW]** Hiển thị Unread Count cho các hội thoại đã bàn giao (Manual).
+- [x] **[NEW]** Hiệu ứng nhấp nháy (pulse) cho Hot Leads (Score >= 50).
+- [x] Cơ chế bàn giao vĩnh viễn (Permanent Handover) và tin nhắn xác nhận chuyên nghiệp.
 - [x] Hiển thị tên khách hàng thật trên Admin Dashboard (thu thập từ PotentialLead).
+- [x] Tối ưu khởi tạo Chat Widget (Lazy Loading + `sessionStorage`).
+- [x] **[FIX]** Sửa lỗi Unread Count vẫn tăng khi đang xem hội thoại.
+- [x] **[FIX]** Sửa lỗi gửi trùng email Lead (Sử dụng cờ `isLeadNotified`).
 - [x] **[FIX]** Sửa lỗi crash màn hình do thiếu `messagesEndRef` trong `ChatWindow.jsx`.
+
+### AI & Orchestration Optimization
+- [x] **[NEW]** Silent Handover cho Facebook Messenger: Bàn giao không thông báo hệ thống.
+- [x] **[NEW]** AI-Driven Contact Extraction: Trích xuất SĐT/Email tự động từ văn bản tự do.
+- [x] **[NEW]** Quy tắc "Một câu hỏi": AI chỉ hỏi 1 ý mỗi lần chat để tối ưu trải nghiệm.
+- [x] **[NEW]** Tư vấn chuyên sâu: Điều chỉnh Prompt để AI kiên nhẫn hơn, không xin SĐT quá sớm.
+- [x] **[FIX]** Sửa lỗi "Double Message" khi xin thông tin liên hệ.
+- [x] **[NEW] Bot Configuration UI**: Cho phép Admin tùy chỉnh Business Prompt và Handover Score động từ Dashboard.
+- [x] **[NEW] Dynamic Orchestration**: Backend tự động áp dụng cấu hình mới nhất cho mỗi tin nhắn (có Cache tối ưu).
 
 - [ ] Thiết kế/triển khai Security Module (JWT, authentication, authorization).
 

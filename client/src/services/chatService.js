@@ -87,6 +87,48 @@ class ChatService {
     }
   }
 
+  // REST API - Mark conversation as read
+  async markAsRead(conversationId) {
+    try {
+      const res = await fetch(`${API_BASE}/conversations/${conversationId}/read`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      return data.success;
+    } catch (error) {
+      console.error('Mark as read failed:', error);
+      return false;
+    }
+  }
+
+  // REST API - Get Bot Settings
+  async getBotSettings() {
+    try {
+      const res = await fetch(`${API_BASE}/settings/bot`);
+      const data = await res.json();
+      return data.success ? data.data : null;
+    } catch (error) {
+      console.error('Get bot settings failed:', error);
+      return null;
+    }
+  }
+
+  // REST API - Update Bot Settings
+  async updateBotSettings(settings) {
+    try {
+      const res = await fetch(`${API_BASE}/settings/bot`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      const data = await res.json();
+      return data.success;
+    } catch (error) {
+      console.error('Update bot settings failed:', error);
+      return false;
+    }
+  }
+
   // STOMP WebSocket - Connect for Customer
   connectWebSocket(conversationId) {
     return this._connect(() => {

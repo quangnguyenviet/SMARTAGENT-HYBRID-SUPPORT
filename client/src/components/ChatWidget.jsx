@@ -3,6 +3,12 @@ import ChatWindow from './ChatWindow';
 
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isActivated, setIsActivated] = useState(false);
+
+  const handleToggle = () => {
+    if (!isActivated) setIsActivated(true);
+    setIsOpen(!isOpen);
+  };
 
   return (
     <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
@@ -30,15 +36,15 @@ const ChatWidget = () => {
           </button>
         </div>
 
-        {/* Body chứa ChatWindow component (đã được tinh chỉnh class để khớp) */}
+        {/* Body chứa ChatWindow component (chỉ load khi đã được activate) */}
         <div className="flex-1 overflow-hidden widget-chat-container">
-          <ChatWindow isWidget={true} />
+          {isActivated && <ChatWindow isWidget={true} />}
         </div>
       </div>
 
       {/* Floating Toggle Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className={`group relative flex h-16 w-16 items-center justify-center rounded-full shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 ${
           isOpen ? 'bg-slate-800 text-white rotate-90' : 'bg-gradient-to-br from-cyan-400 to-indigo-600 text-slate-950'
         }`}

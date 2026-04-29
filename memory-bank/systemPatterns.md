@@ -26,23 +26,25 @@ Hệ thống SmartAgent được thiết kế theo hướng **Modular Monolith**
   - `/topic/messages/{convId}`: Luồng tin nhắn realtime.
   - `/topic/conversations`: Cập nhật inbox cho Admin Dashboard.
 
-### 4. Multi-Subscription WebSocket Pattern (Frontend)
-- **Mô hình**: `chatService.js` được thiết kế để quản lý đồng thời nhiều đăng ký (subscriptions) STOMP.
-- **Lợi ích**: Cho phép Admin Dashboard duy trì kết nối với topic tổng `/topic/admin/conversations` (để cập nhật danh sách inbox) đồng thời subscribe/unsubscribe linh hoạt vào các topic hội thoại cụ thể `/topic/chat/{id}` khi chọn khách hàng (để nhận typing indicator và tin nhắn mới).
+### 4. AI-Driven Handover & Channel Routing
+- **Nhiệm vụ**: Quản lý việc chuyển giao quyền giữa Bot và Human linh hoạt theo kênh.
+- **Quy tắc Handover theo kênh (Channel-based)**:
+  - **Website**: Yêu cầu thu thập thông tin (SĐT/Email) qua Mini-form trước khi bàn giao.
+  - **Facebook**: Triển khai **Silent Handover**. Bot tự động tắt và chuyển trạng thái âm thầm để nhân viên tiếp quản tự nhiên.
+- **Duy trì Bot Active (POST-LEAD)**: Bot vẫn hoạt động sau khi có contact để xử lý các câu hỏi xã giao cho đến khi nhân viên thực sự Take Over.
 
-### 4. AI-Driven Handover & Session State
-- **Nhiệm vụ**: Quản lý việc chuyển giao quyền kiểm soát hội thoại giữa Bot và Human.
-- **Quy tắc**: Dựa trên kết quả từ AI Service, cập nhật trạng thái session trong **Redis** (ví dụ: `is_bot_active: false`, bật cờ ưu tiên). Redis giúp đồng bộ trạng thái cực nhanh giữa các node.
+### 5. AI-Driven Contact Extraction Pattern
+- **Cơ chế**: Sử dụng kết quả trích xuất từ AI (Gemini) để nhận diện Tên, SĐT, Email (hỗ trợ cả văn bản tự do và định dạng không chuẩn).
 
-### 5. Cổng Tương Tác Kép (Dual Interface Gateway)
-- Xử lý việc routing tin nhắn từ khách hàng đến Chatbot hoặc Nhân viên và ngược lại mà khách hàng không nhận ra sự ngắt quãng.
+### 6. Conversational UX Pattern (One Question Rule)
+- **Thiết kế**: Ràng buộc AI chỉ đặt duy nhất một câu hỏi gợi mở trong mỗi lượt phản hồi để giữ mạch hội thoại tự nhiên.
 
-### 4. Sales-Centric Dashboard & AI Sales Assist
-- **Nhiệm vụ**: Giao diện tập trung dành cho nhân viên bán hàng.
+### 7. Sales-Centric Dashboard & Hot Lead Prioritization
+- **Nhiệm vụ**: Giao diện tập trung dành cho nhân viên bán hàng với cơ chế ưu tiên.
 - **Thiết kế hiện tại**:
 	- Dashboard admin 3 cột: Smart Inbox - Workspace - AI Insights.
-	- Cập nhật dữ liệu hoàn toàn qua **STOMP WebSocket Realtime** (topic `/topic/admin/conversations`).
-	- Điều hướng tách biệt theo route: `/admin` cho vận hành nội bộ, `/chat` cho giao diện khách.
+	- **Hot Lead Badge**: Hiển thị Lead Score 🔥 nổi bật kèm hiệu ứng pulse cho các hội thoại tiềm năng (Score >= 50).
+	- **Status Sync**: Cập nhật trạng thái và typing indicator qua STOMP WebSocket realtime.
 	- Tính năng **Take Over** để giành quyền từ AI.
 
 ## Quy Trình Vận Hành (Workflow Pattern)

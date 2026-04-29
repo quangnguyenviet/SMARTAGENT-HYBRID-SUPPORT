@@ -293,4 +293,21 @@ public class ChatController {
                     .body(ApiResponse.error("Failed to take over: " + e.getMessage()));
         }
     }
+
+    /**
+     * Mark conversation as read
+     * POST /api/conversations/{id}/read
+     */
+    @PostMapping("/{id}/read")
+    public ResponseEntity<ApiResponse<Void>> markAsRead(@PathVariable Long id) {
+        log.info("Marking conversation as read: id={}", id);
+        try {
+            chatService.markAsRead(id);
+            return ResponseEntity.ok(ApiResponse.ok(null, "Marked as read successfully"));
+        } catch (Exception e) {
+            log.error("Error marking conversation as read", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to mark as read: " + e.getMessage()));
+        }
+    }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import chatService from '../services/chatService';
 
 function formatDate(value) {
@@ -25,11 +26,13 @@ export default function AdminDashboard() {
   const [newMessage, setNewMessage] = useState('');
   const [inboxTab, setInboxTab] = useState('care'); // 'care' | 'all'
   const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'web' | 'facebook'
+  const [searchQuery, setSearchQuery] = useState(''); // Demo Search
   const selectedConversationIdRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [isCustomerTyping, setIsCustomerTyping] = useState(false);
   const adminTypingTimeoutRef = useRef(null);
   const lastAdminTypingSentRef = useRef(0);
+  const [showMobileChat, setShowMobileChat] = useState(false); // Mobile state: list vs chat
 
   const selectedConversation = useMemo(
     () => conversations.find((item) => item.id === selectedConversationId) || null,
@@ -53,8 +56,16 @@ export default function AdminDashboard() {
       base = base.filter(c => (c.channel || 'web').toLowerCase() === channelFilter);
     }
     
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      base = base.filter(c => 
+        (c.customerName && c.customerName.toLowerCase().includes(q)) || 
+        (c.customerId && c.customerId.toLowerCase().includes(q))
+      );
+    }
+    
     return base;
-  }, [inboxTab, needsCareConversations, conversations, channelFilter]);
+  }, [inboxTab, needsCareConversations, conversations, channelFilter, searchQuery]);
 
 
   useEffect(() => {
@@ -67,6 +78,7 @@ export default function AdminDashboard() {
 
     if (selectedConversationId) {
       loadMessages(selectedConversationId);
+      markAsRead(selectedConversationId);
       
       // Subscribe to specific conversation for real-time events like TYPING
       chatService.subscribeToConversation(selectedConversationId, (msg) => {
@@ -76,6 +88,10 @@ export default function AdminDashboard() {
           }
         }
       });
+    }
+
+    if (selectedConversationId) {
+      setShowMobileChat(true);
     }
 
     return () => chatService.unsubscribeFromConversation();
@@ -129,6 +145,9 @@ export default function AdminDashboard() {
       });
 
       if (selectedConversationIdRef.current === event.conversation.id && event.message) {
+        // Reset unread count immediately if we are already viewing this conversation
+        markAsRead(event.conversation.id);
+        
         setMessages(prev => {
           if (prev.some(m => m.id === event.message.id)) return prev;
           return [...prev, event.message];
@@ -143,7 +162,7 @@ export default function AdminDashboard() {
     try {
       const data = await chatService.getAllConversations();
       setConversations(data);
-      if (data.length > 0 && !selectedConversationId) {
+      if (data.length > 0 && !selectedConversationIdRef.current) {
         setSelectedConversationId(data[0].id);
       }
     } catch (err) {
@@ -153,6 +172,16 @@ export default function AdminDashboard() {
       if (!silent) setLoadingConversations(false);
     }
   }
+
+  const markAsRead = async (id) => {
+    try {
+      await chatService.markAsRead(id);
+      // Update local state to show zero unread immediately
+      setConversations(prev => prev.map(c => c.id === id ? { ...c, unreadCount: 0 } : c));
+    } catch (err) {
+      console.error('Error marking as read:', err);
+    }
+  };
 
   async function loadMessages(conversationId, silent = false) {
     if (!conversationId) return;
@@ -225,22 +254,43 @@ export default function AdminDashboard() {
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Header riêng cho Admin */}
       <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/80">SmartAgent Admin</p>
-            <h1 className="text-xl font-semibold text-white">Hybrid Support Console</h1>
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center gap-3">
+            {/* Mobile Back Button */}
+            {showMobileChat && (
+              <button 
+                onClick={() => setShowMobileChat(false)}
+                className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition hover:bg-white/10"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+            <div>
+              <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-cyan-300/80">SmartAgent Admin</p>
+              <h1 className="text-base sm:text-xl font-semibold text-white truncate max-w-[150px] sm:max-w-none">Hybrid Console</h1>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-            <span className="text-sm font-medium text-emerald-400">Hệ thống sẵn sàng</span>
+          <div className="flex items-center gap-3 sm:gap-6">
+            <Link 
+              to="/admin/settings"
+              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+            >
+              <span>⚙️</span> <span className="hidden sm:inline">Cấu hình Bot</span>
+            </Link>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+              <span className="hidden sm:inline text-sm font-medium text-emerald-400">Hệ thống sẵn sàng</span>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[340px_1fr] lg:px-6 overflow-hidden" style={{ height: 'calc(100vh - 73px)' }}>
+      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 gap-4 p-4 lg:grid-cols-[340px_1fr] lg:px-6 overflow-hidden" style={{ height: 'calc(100vh - 65px)' }}>
         
         {/* CỘT 1: SMART INBOX */}
-        <aside className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+        <aside className={`${showMobileChat ? 'hidden lg:flex' : 'flex'} flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl`}>
           {/* Header */}
           <div className="border-b border-white/10 px-5 pt-4 pb-0">
             <div className="flex items-center justify-between gap-3 mb-3">
@@ -256,6 +306,22 @@ export default function AdminDashboard() {
               </button>
             </div>
 
+            {/* DEMO SEARCH BAR */}
+            <div className="px-5 mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm tên hoặc mã khách..."
+                  className="w-full rounded-xl border border-white/10 bg-white/5 py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                />
+                <svg className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+
             {/* Tabs */}
             <div className="flex gap-1">
               <button
@@ -266,7 +332,7 @@ export default function AdminDashboard() {
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Manual
+                Nhân viên hỗ trợ
                 {needsCareConversations.length > 0 && (
                   <span className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
                     inboxTab === 'care' ? 'bg-rose-500 text-white' : 'bg-slate-700 text-slate-300'
@@ -332,7 +398,6 @@ export default function AdminDashboard() {
               <div className="space-y-3">
                 {filteredConversations.map((conversation) => {
                   const isSelected = conversation.id === selectedConversationId;
-                  const score = conversation.leadScore || 0;
                   const botActive = conversation.isBotActive !== false;
 
                   return (
@@ -357,11 +422,24 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         
-                        {/* Lửa thể hiện độ "Hot" của Lead */}
+                        {/* BADGE HIỂN THỊ: LEAD SCORE HOẶC UNREAD COUNT */}
                         <div className="flex flex-col items-end">
-                          <span className={`text-lg font-bold flex items-center gap-1 ${score >= 50 ? 'text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : score >= 15 ? 'text-amber-500' : 'text-slate-500'}`}>
-                            {score} <span className="text-sm">🔥</span>
-                          </span>
+                          {botActive ? (
+                            <div className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black ${
+                              conversation.leadScore >= 50 
+                                ? 'bg-orange-500 text-white shadow-[0_0_12px_rgba(249,115,22,0.5)] animate-pulse' 
+                                : 'bg-slate-700 text-slate-400'
+                            }`}>
+                              <span>🔥</span>
+                              {conversation.leadScore || 0}
+                            </div>
+                          ) : (
+                            conversation.unreadCount > 0 && (
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-black text-slate-900 shadow-[0_0_12px_rgba(6,182,212,0.5)] animate-bounce">
+                                {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
+                              </div>
+                            )
+                          )}
                         </div>
                       </div>
 
@@ -378,11 +456,11 @@ export default function AdminDashboard() {
         </aside>
 
         {/* CỘT 2: KHÔNG GIAN CHAT (ACTIVE WORKSPACE) */}
-        <section className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
-          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 bg-slate-900/50">
-            <div>
+        <section className={`${showMobileChat ? 'flex' : 'hidden lg:flex'} flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl`}>
+          <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-5 py-3 sm:py-4 bg-slate-900/50">
+            <div className="overflow-hidden">
               <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Workspace</p>
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-sm sm:text-lg font-semibold text-white truncate">
                 {selectedConversation 
                   ? (selectedConversation.customerName || `Khách hàng #${selectedConversation.customerId} (${selectedConversation.channel || 'Web'})`)
                   : 'Chưa chọn hội thoại'}
@@ -390,12 +468,12 @@ export default function AdminDashboard() {
             </div>
             
             {/* Nút TAKE OVER Khổng lồ */}
-            {selectedConversation && selectedConversation.isBotActive !== false && (
+            {selectedConversation && selectedConversation.isBotActive !== false && selectedConversation.status !== 'HANDED_OVER' && (
               <button 
                 onClick={handleTakeOver}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-4 py-2 font-bold text-white shadow-lg shadow-rose-500/30 transition hover:scale-105 hover:shadow-rose-500/50"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-white shadow-lg shadow-rose-500/30 transition hover:scale-105 hover:shadow-rose-500/50"
               >
-                <span>⚡</span> TAKE OVER
+                <span>⚡</span> <span className="hidden sm:inline">TAKE OVER</span><span className="sm:hidden">TAKE</span>
               </button>
             )}
           </div>
@@ -415,7 +493,7 @@ export default function AdminDashboard() {
 
                   return (
                     <div key={message.id} className={`flex ${isUser ? 'justify-start' : 'justify-end'}`}>
-                      <div className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-lg ${
+                      <div className={`max-w-[90%] sm:max-w-[80%] rounded-2xl px-3 sm:px-4 py-2 sm:py-3 shadow-lg ${
                         isUser 
                           ? 'bg-slate-800 border border-white/10 text-slate-200 rounded-tl-none' 
                           : isBot 

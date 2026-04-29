@@ -8,10 +8,11 @@ Mục tiêu cốt lõi của tính năng này là đảm bảo luồng tin nhắ
 
 ## 1. Các Thành Phần Chính (Key Components)
 
-1. **Client Interface (Khách hàng - `/chat`)**:
-   - Khung chat dành cho khách hàng tích hợp trên website.
-   - Giao tiếp với backend để gửi tin nhắn, nhận phản hồi từ AI hoặc từ Nhân viên hỗ trợ.
-   - Hoạt động qua REST API (cho lịch sử) và WebSocket (để nhận/gửi tin nhắn realtime).
+1. **Client Interface (Web Chat & Facebook Messenger)**:
+   - Khung chat dành cho khách hàng tích hợp trên Website và tin nhắn qua Facebook Messenger Page.
+   - **Lazy Initialization**: Trên Website, hội thoại chỉ được tạo khi người dùng click vào biểu tượng chat.
+   - **Session Persistence**: Duy trì phiên chat xuyên suốt khi refresh trang thông qua `sessionStorage`.
+   - Giao tiếp với backend qua REST API (cho lịch sử) và WebSocket/Webhook (realtime).
 
 2. **Admin Dashboard (Nhân viên/Sales - `/admin`)**:
    - Màn hình trung tâm dành cho nhân viên quản lý hàng loạt các cuộc hội thoại.

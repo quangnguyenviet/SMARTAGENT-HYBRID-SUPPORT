@@ -232,15 +232,6 @@
             </div>
         </div>
 
-        <!-- AI Intent Summary -->
-        <div th:if="${intentSummary != null and !intentSummary.isEmpty()}">
-            <div class="section-title">Phân tích AI</div>
-            <div class="intent-box">
-                <div class="intent-label">🎯 Ý định (Intent)</div>
-                <span th:text="${intentSummary}">Khách hỏi về giá sỉ và chính sách chiết khấu</span>
-            </div>
-        </div>
-
         <!-- AI Conversation Summary -->
         <div th:if="${conversationSummary != null and !conversationSummary.isEmpty()}">
             <div class="section-title">Tóm tắt hội thoại</div>

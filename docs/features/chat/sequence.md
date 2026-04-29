@@ -1,80 +1,95 @@
-# Sequence Diagram: Push Realtime cho Admin Dashboard
+# Sequence Diagram: Omnichannel & Admin Realtime
 
-Tài liệu này mô tả luồng hoạt động (sequence) của tính năng đẩy dữ liệu (push) realtime cho Admin Dashboard thông qua kênh WebSocket. Việc này thay thế giải pháp polling, giúp Admin theo dõi các cuộc hội thoại và tin nhắn mới ngay lập tức.
+Tài liệu này mô tả luồng hoạt động (sequence) của hệ thống khi tiếp nhận tin nhắn từ nhiều nguồn (Website, Facebook) và cách Admin Dashboard cập nhật trạng thái tin nhắn chưa đọc.
 
-## Biểu Đồ Tuần Tự (Sequence Diagram)
+## 1. Luồng Tin Nhắn Facebook Messenger
 
 ```mermaid
 sequenceDiagram
     autonumber
     
-    participant AdminClient as AdminClient (React)
-    participant CustomerClient as CustomerClient (React)
-    participant ChatController as ChatController
-    participant ChatWebSocketController as ChatWebSocketController
-    participant ChatService as ChatService
-    participant OrchestratorService as OrchestratorService
-    participant AiScoringClient as AiScoringClient
-    participant Repositories as Conversation/Message/Lead<br/>Repositories
-    participant NotificationService as NotificationService
-    participant SimpMessagingTemplate as SimpMessagingTemplate
-    participant WSBroker as WebSocket Broker
+    participant FB as Facebook Messenger
+    participant Webhook as MessengerWebhookController
+    participant MS as MessengerService
+    participant CS as ChatService
+    participant OS as OrchestratorService
+    participant WS as WebSocket Broker
+    participant Admin as Admin Dashboard (React)
 
-    %% Giai đoạn 1: Admin Khởi tạo kết nối
-    rect rgb(0, 0, 0)
-    Note over AdminClient, WSBroker: 1. Khởi tạo kết nối & Subscribe Topic
-    AdminClient->>WSBroker: Connect WebSocket STOMP (/ws)
-    WSBroker-->>AdminClient: Connected
-    AdminClient->>WSBroker: subscribeToAdminTopic()<br/>-> /topic/admin/conversations
+    FB->>Webhook: Gửi tin nhắn (Webhook Event)
+    Webhook->>MS: getUserProfile(psid)
+    MS-->>Webhook: Trả về Tên khách hàng
+    Webhook->>CS: createConversation (nếu chưa có)
+    Webhook->>CS: sendMessage(content, senderType='user')
+    
+    rect rgb(30, 30, 30)
+    Note right of CS: Logic Unread Count
+    CS->>CS: Increment unreadCount
+    CS->>WS: Broadcast CONVERSATION_UPDATED
+    WS-->>Admin: Hiển thị badge số tin mới
     end
 
-    %% Giai đoạn 2: Khách hàng Tương tác & AI Xử lý
-    rect rgb(0, 0, 0)
-    Note over CustomerClient, Repositories: 2. Luồng tin nhắn & AI Orchestrator
+    Webhook->>OS: processUserMessage()
+    OS->>CS: sendBotReply(reply)
+    CS->>MS: sendMessage (FB Send API)
+    MS-->>FB: Trả về tin nhắn của Bot
+```
+
+## 2. Luồng Đọc Tin Nhắn (Admin Mark As Read)
+
+```mermaid
+sequenceDiagram
+    autonumber
     
-    CustomerClient->>ChatWebSocketController: sendMessage()
-    ChatWebSocketController->>ChatService: saveMessage(dto)
-    ChatService->>Repositories: save(Message)
+    participant Admin as Admin Dashboard (React)
+    participant CC as ChatController
+    participant CS as ChatService
+    participant WS as WebSocket Broker
+
+    Admin->>Admin: Click chọn hội thoại
+    Admin->>CC: POST /api/conversations/{id}/read
+    CC->>CS: markAsRead(id)
     
-    ChatWebSocketController->>OrchestratorService: processUserMessage()
-    
-    alt Luồng thông tin liên hệ ([CONTACT] prefix)
-        OrchestratorService->>Repositories: Save Contact Info to PotentialLead
-        OrchestratorService->>ChatService: updateStatus(HANDED_OVER) & disableBot()
-        OrchestratorService->>AiScoringClient: summarizeConversation(history)
-        AiScoringClient-->>OrchestratorService: summary text
-        OrchestratorService->>NotificationService: sendLeadNotification(data + summary)
-        NotificationService-->>Admin (Email): Lead Alert Email
-        OrchestratorService->>ChatService: sendBotReply("Cảm ơn...")
-    else Luồng AI bình thường
-        OrchestratorService->>AiScoringClient: analyzeMessage(msg, history)
-        AiScoringClient-->>OrchestratorService: AiAnalysisResult
-        OrchestratorService->>Repositories: Update Lead Score
-        
-        alt Nếu Score >= 50 hoặc Intent == Handover
-            OrchestratorService->>ChatService: updateStatus(COLLECTING_CONTACT)
-            OrchestratorService->>ChatService: sendMessage(type="collect_contact")
-            ChatService->>WSBroker: push to /topic/chat/{id}
-            WSBroker->>CustomerClient: Hiển thị Mini Contact Form
-        else Bot trả lời bình thường
-            OrchestratorService->>ChatService: sendBotReply(reply)
-        end
-    end
-    end
-    
-    %% Giai đoạn 3: Push Notification Realtime cho Admin
-    rect rgb(0, 0, 0)
-    Note over ChatService, AdminClient: 3. Đẩy sự kiện Realtime tới Admin Dashboard
-    ChatService->>SimpMessagingTemplate: broadcastAdminEvent(EventPayload)
-    SimpMessagingTemplate->>WSBroker: send to /topic/admin/conversations
-    WSBroker->>AdminClient: Broadcast (LEAD_SCORE_UPDATED, etc.)
-    AdminClient->>AdminClient: Update Inbox State & Tabs
+    rect rgb(30, 30, 30)
+    Note right of CS: Logic Reset
+    CS->>CS: Set unreadCount = 0
+    CS->>WS: Broadcast CONVERSATION_UPDATED
+    WS-->>Admin: Xóa badge số tin chưa đọc
     end
 ```
 
-## Chú Thích Các Bước
+## 3. Luồng AI Orchestrator & Handover (Tổng quát)
 
-1. **Khởi tạo kết nối Admin (`AdminClient`)**: Khi Admin vào màn hình `/admin`, giao diện React ngay lập tức tạo kết nối STOMP qua WebSocket Broker và gọi `subscribeToAdminTopic()` để đăng ký lắng nghe tại topic `/topic/admin/conversations`.
-2. **Khách hàng tương tác (`CustomerClient`)**: Tùy vào hành động cụ thể, giao diện khách hàng sẽ gọi `ChatController` qua HTTP REST (khi khởi tạo hội thoại mới) hoặc thông qua `ChatWebSocketController` (khi gửi tin nhắn realtime). Từ đó, `ChatService` sẽ điều phối luồng và gọi Repositories (`ConversationRepository`, `MessageRepository`) để lưu CSDL.
-3. **Push Event Realtime (`ChatService`)**: Đây là logic cốt lõi. Sau khi dữ liệu được lưu thành công, `ChatService` sẽ gọi tới hàm `broadcastAdminEvent()`, bản chất là truyền qua `SimpMessagingTemplate` để bắn một thông điệp Broadcast.
-4. **Cập nhật UI (`AdminClient`)**: WebSocket Broker phân phối tin nhắn dạng JSON Event cho AdminClient. Frontend lập tức gọi hàm `renderConversations()` để tự động cập nhật State (đưa hội thoại lên top, thêm tin nhắn), hiển thị trực tiếp mà không cần chờ chu kỳ lấy dữ liệu (polling) tiếp theo.
+```mermaid
+sequenceDiagram
+    autonumber
+    
+    participant User as Khách hàng (Web/FB)
+    participant Server as Spring Boot Server
+    participant AI as Gemini AI
+    participant DB as Database
+    participant Email as Email System
+
+    User->>Server: Gửi tin nhắn
+    Server->>AI: Phân tích Intent & Chấm điểm
+    AI-->>Server: Lead Score >= 50
+    Server->>User: Yêu cầu thông tin liên hệ (Form/Messenger)
+    User->>Server: Cung cấp SĐT/Email
+    
+    Server->>DB: Lưu PotentialLead
+    Server->>DB: Kiểm tra isLeadNotified?
+    
+    alt Chưa thông báo
+        Server->>AI: Tóm tắt hội thoại
+        AI-->>Server: Summary text
+        Server->>Email: Gửi thông báo cho Agent (duy nhất 1 lần)
+        Server->>DB: Set isLeadNotified = true
+    end
+    
+    Server->>User: Xác nhận & Chờ nhân viên hỗ trợ
+```
+
+## Chú Thích
+1. **Messenger Integration**: Sử dụng Webhook để nhận tin và Send API để phản hồi. Tự động mapping profile người dùng vào hệ thống.
+2. **Unread Management**: Số tin nhắn chưa đọc được quản lý tại server và đồng bộ qua WebSocket ngay lập tức.
+3. **Session Persistence**: Chat Widget trên web sử dụng `sessionStorage` để không làm đứt quãng hội thoại khi refresh.

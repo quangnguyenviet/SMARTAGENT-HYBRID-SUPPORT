@@ -28,6 +28,7 @@ Hệ thống xử lý qua 3 giai đoạn chính trong `OrchestratorService`:
     - Điểm tiềm năng & Ý định.
     - Bản tóm tắt hội thoại của AI.
     - Link truy cập nhanh tới hội thoại trên Dashboard.
+- **Cơ chế chống trùng lặp**: Sử dụng cờ `isLeadNotified` trong bảng `potential_leads`. Email sẽ chỉ được gửi **duy nhất một lần** cho mỗi hội thoại, ngay cả khi khách hàng tiếp tục nhắn tin sau khi đã trở thành Lead.
 
 ## 3. Thành phần kỹ thuật
 - **Frontend**: Component `ChatWindow` xử lý render form động.

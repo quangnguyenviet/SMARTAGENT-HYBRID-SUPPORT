@@ -24,6 +24,7 @@ public class ConversationDTO {
     private String status;
     private Boolean isBotActive;
     private Integer leadScore;
+    private Integer unreadCount;
     private String intentSummary;
     private String sentiment;
     private String customerName;

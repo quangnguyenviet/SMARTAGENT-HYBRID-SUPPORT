@@ -49,4 +49,8 @@ public class PotentialLead {
 
     @Column(name = "contact_collected_at")
     private LocalDateTime contactCollectedAt;
+
+    @Column(name = "is_lead_notified")
+    @Builder.Default
+    private Boolean isLeadNotified = false;
 }

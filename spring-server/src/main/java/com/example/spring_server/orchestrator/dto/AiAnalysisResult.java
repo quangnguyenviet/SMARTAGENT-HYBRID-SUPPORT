@@ -31,5 +31,12 @@ public class AiAnalysisResult {
      * Số điểm được cộng thêm dựa vào nội dung tin nhắn
      */
     private int scoreIncrement;
+
+    /**
+     * Thông tin trích xuất được từ tin nhắn (nếu có)
+     */
+    private String customerName;
+    private String phone;
+    private String email;
     
 }

@@ -45,7 +45,6 @@ public class NotificationServiceImpl implements NotificationService {
             context.setVariable("phone",               data.getPhone());
             context.setVariable("email",               data.getEmail());
             context.setVariable("leadScore",           data.getLeadScore());
-            context.setVariable("intentSummary",       data.getIntentSummary());
             context.setVariable("conversationSummary", data.getConversationSummary());
             context.setVariable("conversationId",      data.getConversationId());
             context.setVariable("conversationLink",    data.getConversationLink());

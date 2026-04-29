@@ -19,8 +19,8 @@ import java.util.List;
 public class MockAiScoringClientImpl implements AiScoringClient {
 
     @Override
-    public AiAnalysisResult analyzeMessage(String currentMessage, List<String> history, boolean isLead) {
-        log.info("[MOCK] Phân tích tin nhắn: {} (isLead: {})", currentMessage, isLead);
+    public AiAnalysisResult analyzeMessage(String currentMessage, List<String> history, boolean isLead, String channel) {
+        log.info("[MOCK AI] Phân tích tin nhắn trên kênh {}: {}", channel, currentMessage);
         
         String lowerMsg = currentMessage.toLowerCase();
         

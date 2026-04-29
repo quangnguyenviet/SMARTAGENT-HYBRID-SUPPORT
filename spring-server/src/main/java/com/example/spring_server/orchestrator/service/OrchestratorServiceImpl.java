@@ -393,7 +393,6 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 .phone(lead.getPhone())
                 .email(lead.getEmail())
                 .leadScore(conversation.getLeadScore())
-                .intentSummary(lead.getIntentSummary())
                 .conversationSummary(conversationSummary)
                 .conversationId(conversationId)
                 .conversationLink(conversationLink)

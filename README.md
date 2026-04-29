@@ -85,17 +85,17 @@ Hệ thống cho phép Admin thay đổi hành vi của AI ngay lập tức mà 
 
 | Website Chat Widget | Admin Hybrid Dashboard |
 |:---:|:---:|
-| ![Website Chat](images/image1.png) | ![Admin Dashboard](images/image2.png) |
+| ![Website Chat](asset/images/image1.png) | ![Admin Dashboard](asset/images/image2.png) |
 | *Giao diện chat tư vấn thông minh trên Website* | *Bảng điều khiển quản trị tập trung (Hybrid Console)* |
 
 | Facebook Messenger Integration | AI Bot Configuration |
 |:---:|:---:|
-| ![Messenger Chat](images/image3.png) | ![Bot Config](images/image6.png) |
+| ![Messenger Chat](asset/images/image3.png) | ![Bot Config](asset/images/image6.png) |
 | *Tích hợp đa kênh qua Facebook Messenger* | *Tùy chỉnh Business Prompt & Mốc Handover cho AI* |
 
 | Email Notification (Lead Alert) | AI Conversation Summary |
 |:---:|:---:|
-| ![Gmail Alert](images/image4.png) | ![Gmail Summary](images/image5.png) |
+| ![Gmail Alert](asset/images/image4.png) | ![Gmail Summary](asset/images/image5.png) |
 | *Thông báo Email tức thì khi có Lead tiềm năng* | *AI tự động tóm tắt nội dung & ý định khách hàng* |
 
 ---

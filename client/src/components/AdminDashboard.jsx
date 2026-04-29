@@ -32,6 +32,7 @@ export default function AdminDashboard() {
   const [isCustomerTyping, setIsCustomerTyping] = useState(false);
   const adminTypingTimeoutRef = useRef(null);
   const lastAdminTypingSentRef = useRef(0);
+  const [showMobileChat, setShowMobileChat] = useState(false); // Mobile state: list vs chat
 
   const selectedConversation = useMemo(
     () => conversations.find((item) => item.id === selectedConversationId) || null,
@@ -87,6 +88,10 @@ export default function AdminDashboard() {
           }
         }
       });
+    }
+
+    if (selectedConversationId) {
+      setShowMobileChat(true);
     }
 
     return () => chatService.unsubscribeFromConversation();
@@ -249,30 +254,43 @@ export default function AdminDashboard() {
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Header riêng cho Admin */}
       <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/80">SmartAgent Admin</p>
-            <h1 className="text-xl font-semibold text-white">Hybrid Support Console</h1>
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center gap-3">
+            {/* Mobile Back Button */}
+            {showMobileChat && (
+              <button 
+                onClick={() => setShowMobileChat(false)}
+                className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition hover:bg-white/10"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+            <div>
+              <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-cyan-300/80">SmartAgent Admin</p>
+              <h1 className="text-base sm:text-xl font-semibold text-white truncate max-w-[150px] sm:max-w-none">Hybrid Console</h1>
+            </div>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 sm:gap-6">
             <Link 
               to="/admin/settings"
-              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
             >
-              <span>⚙️</span> Cấu hình Bot
+              <span>⚙️</span> <span className="hidden sm:inline">Cấu hình Bot</span>
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-              <span className="text-sm font-medium text-emerald-400">Hệ thống sẵn sàng</span>
+              <span className="hidden sm:inline text-sm font-medium text-emerald-400">Hệ thống sẵn sàng</span>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[340px_1fr] lg:px-6 overflow-hidden" style={{ height: 'calc(100vh - 73px)' }}>
+      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 gap-4 p-4 lg:grid-cols-[340px_1fr] lg:px-6 overflow-hidden" style={{ height: 'calc(100vh - 65px)' }}>
         
         {/* CỘT 1: SMART INBOX */}
-        <aside className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+        <aside className={`${showMobileChat ? 'hidden lg:flex' : 'flex'} flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl`}>
           {/* Header */}
           <div className="border-b border-white/10 px-5 pt-4 pb-0">
             <div className="flex items-center justify-between gap-3 mb-3">
@@ -438,11 +456,11 @@ export default function AdminDashboard() {
         </aside>
 
         {/* CỘT 2: KHÔNG GIAN CHAT (ACTIVE WORKSPACE) */}
-        <section className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
-          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 bg-slate-900/50">
-            <div>
+        <section className={`${showMobileChat ? 'flex' : 'hidden lg:flex'} flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl`}>
+          <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-5 py-3 sm:py-4 bg-slate-900/50">
+            <div className="overflow-hidden">
               <p className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/80">Workspace</p>
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-sm sm:text-lg font-semibold text-white truncate">
                 {selectedConversation 
                   ? (selectedConversation.customerName || `Khách hàng #${selectedConversation.customerId} (${selectedConversation.channel || 'Web'})`)
                   : 'Chưa chọn hội thoại'}
@@ -453,9 +471,9 @@ export default function AdminDashboard() {
             {selectedConversation && selectedConversation.isBotActive !== false && selectedConversation.status !== 'HANDED_OVER' && (
               <button 
                 onClick={handleTakeOver}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-4 py-2 font-bold text-white shadow-lg shadow-rose-500/30 transition hover:scale-105 hover:shadow-rose-500/50"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-white shadow-lg shadow-rose-500/30 transition hover:scale-105 hover:shadow-rose-500/50"
               >
-                <span>⚡</span> TAKE OVER
+                <span>⚡</span> <span className="hidden sm:inline">TAKE OVER</span><span className="sm:hidden">TAKE</span>
               </button>
             )}
           </div>
@@ -475,7 +493,7 @@ export default function AdminDashboard() {
 
                   return (
                     <div key={message.id} className={`flex ${isUser ? 'justify-start' : 'justify-end'}`}>
-                      <div className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-lg ${
+                      <div className={`max-w-[90%] sm:max-w-[80%] rounded-2xl px-3 sm:px-4 py-2 sm:py-3 shadow-lg ${
                         isUser 
                           ? 'bg-slate-800 border border-white/10 text-slate-200 rounded-tl-none' 
                           : isBot 
